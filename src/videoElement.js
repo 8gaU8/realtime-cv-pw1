@@ -1,7 +1,7 @@
 import moonUrl from "../assets/moon.mp4";
 import sfURL from "../assets/sf.mp4";
 
-const videoConfig = {
+export const videoConfig = {
   "moon.mp4": {
     heightFactor: 1,
     widthFactor: 1,
@@ -11,15 +11,15 @@ const videoConfig = {
   "sf.mp4": {
     heightFactor: 1,
     widthFactor: 2,
-    sfURL,
+    path: sfURL,
   },
 };
 
-export const generateVideoElement = () => {
+export function generateVideoElement(path) {
   const video = document.createElement("video");
-  video.src = sfURL;
+  video.src = path;
   video.load();
   video.muted = true;
   video.loop = true;
   return video;
-};
+}

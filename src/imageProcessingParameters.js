@@ -1,7 +1,9 @@
 export class ImageProcessingParameters {
-  constructor(uniforms, video) {
+  constructor(uniforms) {
     this.uniforms = uniforms;
-    this.video = video;
+    this.video = null;
+    this.videoConfig = null;
     this.selectedMethod = "trueAnaglyphs";
+    this.renderFunc = null;
   }
 }

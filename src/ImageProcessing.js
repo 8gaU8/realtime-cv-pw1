@@ -1,18 +1,22 @@
 import * as THREE from "https://unpkg.com/three@0.172.0/build/three.module.js";
-import { vertexShader, fragmentShader } from "./shader";
+import { anaglyphMacros, fragmentShader, vertexShader } from "./shader.js";
 
 // 画像処理クラス
 export class IVimageProcessing {
-  constructor(height, width, uniforms) {
+  constructor(parameters) {
+    this.parameters = parameters;
     const imageProcessingMaterial = new THREE.RawShaderMaterial({
-      uniforms: uniforms,
+      uniforms: parameters.uniforms,
       vertexShader: vertexShader,
       fragmentShader: fragmentShader,
       glslVersion: THREE.GLSL3,
+      defines: anaglyphMacros[parameters.selectedMethod],
     });
 
-    this.height = height;
-    this.width = width;
+    console.log(anaglyphMacros[parameters.selectedMethod]);
+
+    this.height = parameters.video.videoHeight;
+    this.width = parameters.video.videoWidth / 2;
 
     //3 rtt setup
     this.scene = new THREE.Scene();
@@ -48,7 +52,10 @@ export class IVimageProcessing {
   }
 
   createVideoPlane() {
-    const aspectRatio = this.height / (this.width * 2);
+    const hf = this.parameters.videoConfig.heightFactor;
+    const wf = this.parameters.videoConfig.widthFactor;
+
+    const aspectRatio = (this.height * hf) / (this.width * wf);
 
     // 処理済み映像の平面
     const geometry = new THREE.PlaneGeometry(1, aspectRatio);
@@ -57,7 +64,7 @@ export class IVimageProcessing {
       side: THREE.DoubleSide,
     });
     const plane = new THREE.Mesh(geometry, material);
-    plane.position.z = 0.15;
+    plane.position.z = 0.55;
     plane.receiveShadow = false;
     plane.castShadow = false;
     return plane;
@@ -68,4 +75,13 @@ export class IVimageProcessing {
     renderer.render(this.scene, this.orthoCamera);
     renderer.setRenderTarget(null);
   }
+}
+// ビデオテクスチャの設定
+export function setupVideoTexture(video) {
+  const videoTexture = new THREE.VideoTexture(video);
+  videoTexture.minFilter = THREE.NearestFilter;
+  videoTexture.magFilter = THREE.NearestFilter;
+  videoTexture.generateMipmaps = false;
+  videoTexture.format = THREE.RGBAFormat;
+  return videoTexture;
 }

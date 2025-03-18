@@ -1,5 +1,8 @@
+import { anaglyphMacros } from "./shader.js";
 
-export const initGUI = (uniforms, video, gui) => {
+export function initGUI(gui, params, onChange, onVideoChange) {
+  const video = params.video;
+  const uniforms = params.uniforms;
   // GUI設定
   const pausePlayObj = {
     pausePlay: () => {
@@ -17,10 +20,32 @@ export const initGUI = (uniforms, video, gui) => {
     },
   };
 
-  gui.add(uniforms.sizeDiv2, "value", 1, 21).name("sizeDiv2");
   gui.add(uniforms.scale, "value", 0.1, 10).name("Scale");
   gui.add(uniforms.translateX, "value", 0, 1).name("Translate X");
   gui.add(uniforms.translateY, "value", 0, 1).name("Translate Y");
   gui.add(pausePlayObj, "pausePlay").name("Pause/play video");
   gui.add(pausePlayObj, "add10sec").name("Add 10 seconds");
-};
+  gui
+    .add({ video: "sf" }, "video", ["sf", "moon"])
+    .name("Video")
+    .onChange((videoName) => {
+      onVideoChange(videoName);
+    });
+
+  // anaglyph GUI
+  const anaglyphGUI = gui.addFolder("Anaglyph Method");
+
+  function onAnaglyphChange(value) {
+    params.selectedMethod = value;
+    onChange();
+  }
+
+  function genAnaglyphButton(name) {
+    const anaglyphObject = {
+      [name]: () => onAnaglyphChange(name),
+    };
+    anaglyphGUI.add(anaglyphObject, name);
+  }
+
+  Object.keys(anaglyphMacros).forEach((name) => genAnaglyphButton(name));
+}

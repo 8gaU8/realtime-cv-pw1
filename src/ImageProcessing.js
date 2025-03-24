@@ -1,23 +1,30 @@
-import * as THREE from 'https://unpkg.com/three@0.172.0/build/three.module.js'
-
+import * as THREE from 'three'
 import { anaglyphMacros, fragmentShader, vertexShader } from './shader.js'
+import { VideoController } from './videoElement.js'
+import { ImageProcessingController } from './imageProcessingController.js'
 
 // 画像処理クラス
-export class IVimageProcessing {
-  constructor(parameters) {
-    this.parameters = parameters
+class IVimageProcessing {
+  /**
+   * 
+   * @param {ImageProcessingController.uniforms} uniforms 
+   * @param {ImageProcessingController.selectedMethod} selectedMethod 
+   * @param {VideoController} videoContoller 
+   */
+  constructor(uniforms, selectedMethod, videoContoller) {
+    this.videoContoller = videoContoller
     const imageProcessingMaterial = new THREE.RawShaderMaterial({
-      uniforms: parameters.uniforms,
+      uniforms: uniforms,
       vertexShader: vertexShader,
       fragmentShader: fragmentShader,
       glslVersion: THREE.GLSL3,
-      defines: anaglyphMacros[parameters.selectedMethod],
+      defines: anaglyphMacros[selectedMethod],
     })
 
-    console.log(anaglyphMacros[parameters.selectedMethod])
+    console.log(anaglyphMacros[selectedMethod])
 
-    this.height = parameters.video.videoHeight
-    this.width = parameters.video.videoWidth / 2
+    this.height = videoContoller.getVideoHeight()
+    this.width = videoContoller.getVideoWidth() / 2
 
     //3 rtt setup
     this.scene = new THREE.Scene()
@@ -44,8 +51,8 @@ export class IVimageProcessing {
   }
 
   createVideoPlane() {
-    const hf = this.parameters.videoConfig.heightFactor
-    const wf = this.parameters.videoConfig.widthFactor
+    const hf = this.videoContoller.getHightFactor()
+    const wf = this.videoContoller.getWidthFactor()
 
     const aspectRatio = (this.height * hf) / (this.width * wf)
 
@@ -69,7 +76,7 @@ export class IVimageProcessing {
   }
 }
 // ビデオテクスチャの設定
-export function setupVideoTexture(video) {
+function setupVideoTexture(video) {
   const videoTexture = new THREE.VideoTexture(video)
   videoTexture.minFilter = THREE.NearestFilter
   videoTexture.magFilter = THREE.NearestFilter
@@ -77,3 +84,5 @@ export function setupVideoTexture(video) {
   videoTexture.format = THREE.RGBAFormat
   return videoTexture
 }
+
+export { IVimageProcessing, setupVideoTexture }

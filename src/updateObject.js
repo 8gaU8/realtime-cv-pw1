@@ -1,4 +1,4 @@
-import { IVimageProcessing, setupVideoTexture } from './ImageProcessing.js'
+import { IVimageProcessing, setupVideoTexture } from './imageProcessing.js'
 import { generateVideoElement, videoConfig } from './videoElement.js'
 
 const updateObject = (scene, params) => {

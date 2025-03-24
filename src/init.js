@@ -1,5 +1,5 @@
-import * as THREE from 'https://unpkg.com/three@0.172.0/build/three.module.js'
-import WEBGL from 'https://unpkg.com/three@0.172.0/examples/jsm/capabilities/WebGL.js'
+import * as THREE from 'three'
+import WEBGL from 'three/examples/jsm/capabilities/WebGL.js'
 
 const initRenderer = () => {
   if (WEBGL.isWebGL2Available() === false) {

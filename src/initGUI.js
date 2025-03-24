@@ -1,51 +1,50 @@
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
 import { anaglyphMacros } from './shader.js'
+import { ImageProcessingController } from './imageProcessingController.js'
+import { VideoController } from './videoElement.js'
 
-export function initGUI(gui, params, onChange, onVideoChange) {
-  const video = params.video
-  const uniforms = params.uniforms
+/**
+ *
+ * @param {GUI} gui
+ * @param {ImageProcessingController } matCtrl
+ * @param {VideoController} videoCtrl
+ */
+function initGUI(gui, matCtrl, videoCtrl) {
   // GUI設定
   const pausePlayObj = {
     pausePlay: () => {
-      if (!video.paused) {
-        console.log('pause')
-        video.pause()
-      } else {
-        console.log('play')
-        video.play()
-      }
+      videoCtrl.pausePlay()
     },
     add10sec: () => {
-      video.currentTime = video.currentTime + 10
-      console.log(video.currentTime)
+      videoCtrl.add10sec()
     },
   }
 
-  gui.add(uniforms.scale, 'value', 0.1, 10).name('Scale')
-  gui.add(uniforms.translateX, 'value', 0, 1).name('Translate X')
-  gui.add(uniforms.translateY, 'value', 0, 1).name('Translate Y')
   gui.add(pausePlayObj, 'pausePlay').name('Pause/play video')
   gui.add(pausePlayObj, 'add10sec').name('Add 10 seconds')
+
   gui
-    .add({ video: 'sf' }, 'video', ['sf', 'moon'])
+    .add({ video: videoCtrl.defaultVideoName }, 'video', videoCtrl.videoNames)
     .name('Video')
     .onChange((videoName) => {
-      onVideoChange(videoName)
+      matCtrl.onVideoChange(videoName)
     })
+
+  gui.add(matCtrl.uniforms.scale, 'value', 0.1, 10).name('Scale')
+  gui.add(matCtrl.uniforms.translateX, 'value', 0, 1).name('Translate X')
+  gui.add(matCtrl.uniforms.translateY, 'value', 0, 1).name('Translate Y')
 
   // anaglyph GUI
   const anaglyphGUI = gui.addFolder('Anaglyph Method')
 
-  function onAnaglyphChange(value) {
-    params.selectedMethod = value
-    onChange()
-  }
-
   function genAnaglyphButton(name) {
     const anaglyphObject = {
-      [name]: () => onAnaglyphChange(name),
+      [name]: () => matCtrl.onAnaglyphChange(name),
     }
     anaglyphGUI.add(anaglyphObject, name)
   }
 
   Object.keys(anaglyphMacros).forEach((name) => genAnaglyphButton(name))
 }
+
+export {initGUI}

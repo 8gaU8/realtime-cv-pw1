@@ -9,6 +9,6 @@ export default defineConfig({
       polyfill: false, // モジュールプリロードのポリフィルを無効化
     },
 
-    minify: "false",
+    minify: false, // 文字列ではなくブール値を使用すべき
   },
 });

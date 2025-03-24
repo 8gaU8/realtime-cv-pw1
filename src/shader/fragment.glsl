@@ -111,12 +111,14 @@ vec4 separableGaussianFilter(int centerX, int centerY){
 vec4 medianFilter(int centerX, int centerY) {
     vec4 textureValues[16];
     int index = 0;
+    // Collect texture values in a 2D array
     for (int i = -kernelSize/2; i < kernelSize/2; i++) {
         for (int j = -kernelSize/2 ; j< kernelSize/2; j++){
             textureValues[index] = texelFetch( image, ivec2(centerX + i, centerY + j), 0 );
             index++;
         }
     }
+    // bubble sort
     for (int i = 0; i < kernelSize * kernelSize - 1; i++) {
         for (int j = 0; j < kernelSize * kernelSize - i - 1; j++) {
             if (length(textureValues[j].rgb) > length(textureValues[j + 1].rgb)) {
@@ -135,14 +137,18 @@ void main(void) {
     // Apply translation
     int leftX = int((gl_FragCoord.x + translateX * float(texSize2d.x))* scale ) % (texSize2d.x / 2);
     int leftY = int((gl_FragCoord.y + translateY * float(texSize2d.y))* scale ) % texSize2d.y;
+
+    // FILTER is macro defined at /src/shader.js
     vec4 leftTextureValue = FILTER(leftX, leftY);
 
     int rightX = leftX + texSize2d.x / 2;
     int rightY = leftY;
+    // FILTER is macro defined at /src/shader.js
     vec4 rightTextureValue = FILTER(rightX, rightY);
 
     // Color Anaglyphs
     out_FragColor.a = 1.0;
+    // ANAGLYPH is macro defined at /src/shader.js
     out_FragColor.rgb = ANAGLYPH(leftTextureValue.rgb, rightTextureValue.rgb);
 
 }

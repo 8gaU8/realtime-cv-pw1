@@ -1,22 +1,28 @@
 import * as THREE from 'three'
 import { anaglyphMacros, filterMacros, fragmentShader, vertexShader } from './shader.js'
 import { VideoController } from './videoElement.js'
+import { ImageProcessingMaterialController } from './imageProcessingController.js'
 
 class ImageProcessing {
   /**
    *
-   * @param {ImageProcessingController.uniforms} uniforms
-   * @param {ImageProcessingController.selectedMethod} selectedAnaglyph
+   * @param {ImageProcessingMaterialController.uniforms} uniforms
+   * @param {string} selectedAnaglyph
+   * @param {string} selectedFilter
    * @param {VideoController} videoContoller
    */
   constructor(uniforms, selectedAnaglyph, selectedFilter, videoContoller) {
     this.videoContoller = videoContoller
+
+    // Define the macros for anaglyph and filter
     const anaglyphDefine = anaglyphMacros[selectedAnaglyph]
-    const convolutionDefine = filterMacros[selectedFilter]
+    const filterDefine = filterMacros[selectedFilter]
     const defines = {
       ...anaglyphDefine,
-      ...convolutionDefine,
+      ...filterDefine,
     }
+    console.log(defines)
+
     const imageProcessingMaterial = new THREE.RawShaderMaterial({
       uniforms: uniforms,
       vertexShader: vertexShader,
@@ -25,10 +31,6 @@ class ImageProcessing {
       defines: defines,
     })
 
-    console.log(defines)
-
-    this.height = videoContoller.getVideoHeight()
-    this.width = videoContoller.getVideoWidth() / 2
 
     //3 rtt setup
     this.scene = new THREE.Scene()
@@ -41,17 +43,17 @@ class ImageProcessing {
       format: THREE.RGBAFormat,
       type: THREE.FloatType,
     }
-    this.rtt = new THREE.WebGLRenderTarget(this.width, this.height, options)
+    this.height = this.videoContoller.getVideoHeight()
+    this.width = this.videoContoller.getVideoWidth() / 2
+    this.renderTarget = new THREE.WebGLRenderTarget(this.width, this.height, options)
 
+    //5 create a plane
+    const positions = new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0])
+    const positionsAttribute = new THREE.BufferAttribute(positions, 3)
     const geom = new THREE.BufferGeometry()
-    geom.setAttribute(
-      'position',
-      new THREE.BufferAttribute(
-        new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0]),
-        3,
-      ),
-    )
-    this.scene.add(new THREE.Mesh(geom, imageProcessingMaterial))
+    geom.setAttribute('position', positionsAttribute)
+    const plane = new THREE.Mesh(geom, imageProcessingMaterial)
+    this.scene.add(plane)
   }
 
   createVideoPlane() {
@@ -63,7 +65,7 @@ class ImageProcessing {
     // 処理済み映像の平面
     const geometry = new THREE.PlaneGeometry(1, aspectRatio)
     const material = new THREE.MeshBasicMaterial({
-      map: this.rtt.texture,
+      map: this.renderTarget.texture,
       side: THREE.FrontSide,
     })
     const plane = new THREE.Mesh(geometry, material)
@@ -73,7 +75,7 @@ class ImageProcessing {
   }
 
   render(renderer) {
-    renderer.setRenderTarget(this.rtt)
+    renderer.setRenderTarget(this.renderTarget)
     renderer.render(this.scene, this.orthoCamera)
     renderer.setRenderTarget(null)
   }

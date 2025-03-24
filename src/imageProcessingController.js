@@ -23,7 +23,7 @@ export class ImageProcessingMaterialController {
       translateX: { type: 'f', value: 0.0 },
       translateY: { type: 'f', value: 0.0 },
       image: { type: 't', value: null },
-      kernelSize: { type: 'i', value: 5 },
+      kernelSize: { type: 'i', value: 3 },
       sigma: { type: 'f', value: 0.85 },
     }
 

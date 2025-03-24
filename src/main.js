@@ -1,6 +1,8 @@
 import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
-import { ImageProcessingController } from './imageProcessingController.js'
+import Stats from 'three/examples/jsm/libs/stats.module'
+import { ImageProcessingMaterialController } from './imageProcessingController.js'
 import { initCamera, initRenderer } from './init.js'
 import { initGUI } from './initGUI.js'
 import { onWindowResizeFactory } from './utils.js'
@@ -10,31 +12,27 @@ async function main() {
   const renderer = initRenderer()
   const camera = initCamera()
   const scene = new THREE.Scene()
+  const orbitControls = new OrbitControls(camera, renderer.domElement)
+  const stats = new Stats()
+  document.body.appendChild(stats.dom)
 
   window.addEventListener('resize', onWindowResizeFactory(camera, renderer), false)
+
   const videoController = new VideoController()
 
-  const uniforms = {
-    sizeDiv2: { type: 'i', value: 5 },
-    scale: { type: 'f', value: 1.0 },
-    translateX: { type: 'f', value: 0.0 },
-    translateY: { type: 'f', value: 0.0 },
-    image: { type: 't', value: null },
-    kernelSize: { type: 'i', value: 5 },
-  }
+  const materialController = new ImageProcessingMaterialController(scene, videoController)
 
-  const controller = new ImageProcessingController(uniforms, scene, videoController)
-
+  // GUIを初期化
   const rootGui = new GUI()
-  initGUI(rootGui, controller, videoController)
-
-  await controller.onVideoChange('sf.mp4')
+  initGUI(rootGui, materialController, videoController)
 
   function animate() {
     requestAnimationFrame(animate)
+    orbitControls.update()
     renderer.clear()
-    controller.render(renderer)
+    materialController.render(renderer)
     renderer.render(scene, camera)
+    stats.update()
   }
 
   animate()

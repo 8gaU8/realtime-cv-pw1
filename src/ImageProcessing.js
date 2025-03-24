@@ -1,27 +1,31 @@
 import * as THREE from 'three'
-import { anaglyphMacros, fragmentShader, vertexShader } from './shader.js'
+import { anaglyphMacros, filterMacros, fragmentShader, vertexShader } from './shader.js'
 import { VideoController } from './videoElement.js'
-import { ImageProcessingController } from './imageProcessingController.js'
 
-// 画像処理クラス
-class IVimageProcessing {
+class ImageProcessing {
   /**
-   * 
-   * @param {ImageProcessingController.uniforms} uniforms 
-   * @param {ImageProcessingController.selectedMethod} selectedMethod 
-   * @param {VideoController} videoContoller 
+   *
+   * @param {ImageProcessingController.uniforms} uniforms
+   * @param {ImageProcessingController.selectedMethod} selectedAnaglyph
+   * @param {VideoController} videoContoller
    */
-  constructor(uniforms, selectedMethod, videoContoller) {
+  constructor(uniforms, selectedAnaglyph, selectedFilter, videoContoller) {
     this.videoContoller = videoContoller
+    const anaglyphDefine = anaglyphMacros[selectedAnaglyph]
+    const convolutionDefine = filterMacros[selectedFilter]
+    const defines = {
+      ...anaglyphDefine,
+      ...convolutionDefine,
+    }
     const imageProcessingMaterial = new THREE.RawShaderMaterial({
       uniforms: uniforms,
       vertexShader: vertexShader,
       fragmentShader: fragmentShader,
       glslVersion: THREE.GLSL3,
-      defines: anaglyphMacros[selectedMethod],
+      defines: defines,
     })
 
-    console.log(anaglyphMacros[selectedMethod])
+    console.log(defines)
 
     this.height = videoContoller.getVideoHeight()
     this.width = videoContoller.getVideoWidth() / 2
@@ -51,7 +55,7 @@ class IVimageProcessing {
   }
 
   createVideoPlane() {
-    const hf = this.videoContoller.getHightFactor()
+    const hf = this.videoContoller.getHeightFactor()
     const wf = this.videoContoller.getWidthFactor()
 
     const aspectRatio = (this.height * hf) / (this.width * wf)
@@ -60,29 +64,19 @@ class IVimageProcessing {
     const geometry = new THREE.PlaneGeometry(1, aspectRatio)
     const material = new THREE.MeshBasicMaterial({
       map: this.rtt.texture,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
     })
     const plane = new THREE.Mesh(geometry, material)
-    plane.position.z = 0.55
     plane.receiveShadow = false
     plane.castShadow = false
     return plane
   }
 
-  IVprocess(renderer) {
+  render(renderer) {
     renderer.setRenderTarget(this.rtt)
     renderer.render(this.scene, this.orthoCamera)
     renderer.setRenderTarget(null)
   }
 }
-// ビデオテクスチャの設定
-function setupVideoTexture(video) {
-  const videoTexture = new THREE.VideoTexture(video)
-  videoTexture.minFilter = THREE.NearestFilter
-  videoTexture.magFilter = THREE.NearestFilter
-  videoTexture.generateMipmaps = false
-  videoTexture.format = THREE.RGBAFormat
-  return videoTexture
-}
 
-export { IVimageProcessing, setupVideoTexture }
+export { ImageProcessing }

@@ -1,50 +1,69 @@
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
-import { anaglyphMacros } from './shader.js'
-import { ImageProcessingController } from './imageProcessingController.js'
+import { anaglyphMacros, filterMacros } from './shader.js'
+import { ImageProcessingMaterialController } from './imageProcessingController.js'
 import { VideoController } from './videoElement.js'
 
 /**
- *
- * @param {GUI} gui
- * @param {ImageProcessingController } matCtrl
- * @param {VideoController} videoCtrl
+ * GUIの初期化
+ * @param {GUI} gui - GUI
+ * @param {ImageProcessingMaterialController} imageCtrl - 画像処理コントローラー
+ * @param {VideoController} videoCtrl - ビデオコントローラー
  */
-function initGUI(gui, matCtrl, videoCtrl) {
-  // GUI設定
-  const pausePlayObj = {
-    pausePlay: () => {
-      videoCtrl.pausePlay()
-    },
-    add10sec: () => {
-      videoCtrl.add10sec()
-    },
-  }
+export function initGUI(gui, imageCtrl, videoCtrl) {
+  // ビデオコントロール用GUI
+  const videoFolder = gui.addFolder('Video Control')
 
-  gui.add(pausePlayObj, 'pausePlay').name('Pause/play video')
-  gui.add(pausePlayObj, 'add10sec').name('Add 10 seconds')
+  videoFolder
+    .add(
+      {
+        pausePlay: () => videoCtrl.togglePlayPause(),
+      },
+      'pausePlay',
+    )
+    .name('Pause/play video')
 
-  gui
+  videoFolder
+    .add(
+      {
+        add10sec: () => videoCtrl.add10sec(),
+      },
+      'add10sec',
+    )
+    .name('Add 10 seconds')
+
+  videoFolder
     .add({ video: videoCtrl.defaultVideoName }, 'video', videoCtrl.videoNames)
     .name('Video')
     .onChange((videoName) => {
-      matCtrl.onVideoChange(videoName)
+      imageCtrl.onVideoChange(videoName)
     })
 
-  gui.add(matCtrl.uniforms.scale, 'value', 0.1, 10).name('Scale')
-  gui.add(matCtrl.uniforms.translateX, 'value', 0, 1).name('Translate X')
-  gui.add(matCtrl.uniforms.translateY, 'value', 0, 1).name('Translate Y')
+  // 変換パラメータ用GUI
+  const paramFolder = gui.addFolder('Transform')
+  paramFolder.add(imageCtrl.uniforms.scale, 'value', 0.1, 10).name('Scale')
+  paramFolder.add(imageCtrl.uniforms.translateX, 'value', 0, 1).name('Translate X')
+  paramFolder.add(imageCtrl.uniforms.translateY, 'value', 0, 1).name('Translate Y')
+  paramFolder.add(imageCtrl.uniforms.kernelSize, 'value', 3, 151, 2).name('Kernel Size')
+  paramFolder.add(imageCtrl.uniforms.sigma, 'value', 0.1, 10).name('Sigma')
 
-  // anaglyph GUI
-  const anaglyphGUI = gui.addFolder('Anaglyph Method')
+  // アナグリフ方式用GUI
+  const anaglyphGUI = gui.addFolder('Anaglyph Methods')
 
-  function genAnaglyphButton(name) {
+  // 各アナグリフ方式のボタンを生成
+  Object.keys(anaglyphMacros).forEach((name) => {
     const anaglyphObject = {
-      [name]: () => matCtrl.onAnaglyphChange(name),
+      [name]: () => imageCtrl.onAnaglyphChange(name),
     }
     anaglyphGUI.add(anaglyphObject, name)
-  }
+  })
 
-  Object.keys(anaglyphMacros).forEach((name) => genAnaglyphButton(name))
+  // フィルター用GUI
+  const filterFolder = gui.addFolder('Filter')
+
+  Object.keys(filterMacros).forEach((name) => {
+    const filterObject = {
+      [name]: () => imageCtrl.onFilterChange(name),
+    }
+    filterFolder.add(filterObject, name)
+  })
 }
-
-export {initGUI}

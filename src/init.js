@@ -29,7 +29,7 @@ const initRenderer = () => {
 
 const initCamera = () => {
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.001, 10)
-  camera.position.z = 1.0
+  camera.position.z = 1.5
 
   return camera
 }

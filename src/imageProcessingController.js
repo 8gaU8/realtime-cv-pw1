@@ -22,7 +22,6 @@ export class ImageProcessingMaterialController {
       scale: { type: 'f', value: 1.0 },
       translateX: { type: 'f', value: 0.0 },
       translateY: { type: 'f', value: 0.0 },
-      image: { type: 't', value: null },
       kernelSize: { type: 'i', value: 3 },
       sigma: { type: 'f', value: 0.85 },
     }
@@ -41,7 +40,6 @@ export class ImageProcessingMaterialController {
   updateProcessedProcessed() {
     const name = 'videoPlaneProcessed'
     this.removeIfExists(name)
-
     const imageProcessing = new ImageProcessing(
       this.uniforms,
       this.selectedAnaglyph,
@@ -60,7 +58,6 @@ export class ImageProcessingMaterialController {
   updateProcessedOriginal() {
     const name = 'videoPlaneOriginal'
     this.removeIfExists(name)
-
     const imageProcessing = new ImageProcessing(
       this.uniforms,
       this.selectedAnaglyph,
@@ -80,8 +77,7 @@ export class ImageProcessingMaterialController {
     if (this.videoController.videoName === videoName) return
 
     console.log('videoName', videoName)
-    this.videoController.setVideo(videoName)
-    this.uniforms.image.value = await this.videoController.setupVideoTexture()
+    await this.videoController.setVideo(videoName)
     this.updateProcessedOriginal()
     this.updateProcessedProcessed()
   }

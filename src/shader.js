@@ -1,5 +1,6 @@
-import fragmentShader from './shader/fragment.glsl?raw'
-import vertexShader from './shader/vertex.glsl?raw'
+import filterFragmentShader from './shader/filter.fragment.glsl?raw'
+import defaultVertexShader from './shader/vertex.glsl?raw'
+import anaglyphFragmentShader from './shader/anaglyph.fragment.glsl?raw'
 
 const anaglyphMacros = {
   trueAnaglyphs: { 'ANAGLYPH(left, right)': 'trueAnaglyph(left, right)' },
@@ -23,4 +24,4 @@ const filterMacros = {
   original: { 'FILTER(X, Y)': 'texelFetch(image, ivec2(X, Y), 0 );' },
 }
 
-export { fragmentShader, vertexShader, anaglyphMacros, filterMacros }
+export { filterFragmentShader, defaultVertexShader, anaglyphFragmentShader, anaglyphMacros, filterMacros }

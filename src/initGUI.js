@@ -43,7 +43,7 @@ export function initGUI(gui, imageCtrl, videoCtrl) {
   paramFolder.add(imageCtrl.uniforms.scale, 'value', 0.1, 10).name('Scale')
   paramFolder.add(imageCtrl.uniforms.translateX, 'value', 0, 1).name('Translate X')
   paramFolder.add(imageCtrl.uniforms.translateY, 'value', 0, 1).name('Translate Y')
-  paramFolder.add(imageCtrl.uniforms.kernelSize, 'value', 3, 151, 2).name('Kernel Size')
+  paramFolder.add(imageCtrl.uniforms.kernelSize, 'value', 3, 11, 2).name('Kernel Size')
   paramFolder.add(imageCtrl.uniforms.sigma, 'value', 0.1, 10).name('Sigma')
 
   // アナグリフ方式用GUI

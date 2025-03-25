@@ -1,71 +1,62 @@
 import * as THREE from 'three'
-import { anaglyphMacros, filterMacros, fragmentShader, vertexShader } from './shader.js'
-import { VideoController } from './videoElement.js'
-import { ImageProcessingMaterialController } from './imageProcessingController.js'
+import { RenderingPipelinePath } from './renderingPipeline.js'
+import {
+  anaglyphFragmentShader,
+  anaglyphMacros,
+  filterFragmentShader,
+  filterMacros,
+} from './shader.js'
 
 class ImageProcessing {
-  /**
-   *
-   * @param {ImageProcessingMaterialController.uniforms} uniforms
-   * @param {string} selectedAnaglyph
-   * @param {string} selectedFilter
-   * @param {VideoController} videoContoller
-   */
   constructor(uniforms, selectedAnaglyph, selectedFilter, videoContoller) {
+    this.uniforms = uniforms
     this.videoContoller = videoContoller
+    this.selectedAnaglyph = selectedAnaglyph
+    this.selectedFilter = selectedFilter
 
-    // Define the macros for anaglyph and filter
-    const anaglyphDefine = anaglyphMacros[selectedAnaglyph]
-    const filterDefine = filterMacros[selectedFilter]
-    const defines = {
-      ...anaglyphDefine,
-      ...filterDefine,
-    }
-    console.log(defines)
+    const width = this.videoContoller.getVideoWidth()
+    const height = this.videoContoller.getVideoHeight()
 
-    const imageProcessingMaterial = new THREE.RawShaderMaterial({
-      uniforms: uniforms,
-      vertexShader: vertexShader,
-      fragmentShader: fragmentShader,
-      glslVersion: THREE.GLSL3,
-      defines: defines,
-    })
+    this.dispWidth = this.videoContoller.getVideoWidth() / 2
+    this.dispHeight = this.videoContoller.getVideoHeight()
 
+    const sourceTexture = this.videoContoller.getVideoTexture()
 
-    //3 rtt setup
-    this.scene = new THREE.Scene()
-    this.orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1 / Math.pow(2, 53), 1)
+    const filterUniforms = { ...this.uniforms }
+    filterUniforms['image'] = { type: 't', value: sourceTexture }
 
-    //4 create a target texture
-    const options = {
-      minFilter: THREE.NearestFilter,
-      magFilter: THREE.NearestFilter,
-      format: THREE.RGBAFormat,
-      type: THREE.FloatType,
-    }
-    this.height = this.videoContoller.getVideoHeight()
-    this.width = this.videoContoller.getVideoWidth() / 2
-    this.renderTarget = new THREE.WebGLRenderTarget(this.width, this.height, options)
+    this.filterPath = new RenderingPipelinePath(
+      width,
+      height,
+      filterUniforms,
+      filterMacros[this.selectedFilter],
+      filterFragmentShader,
+    )
 
-    //5 create a plane
-    const positions = new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0])
-    const positionsAttribute = new THREE.BufferAttribute(positions, 3)
-    const geom = new THREE.BufferGeometry()
-    geom.setAttribute('position', positionsAttribute)
-    const plane = new THREE.Mesh(geom, imageProcessingMaterial)
-    this.scene.add(plane)
+    const texture = this.filterPath.getTexture()
+    console.log(texture)
+    const anaglyphUniforms = { ...this.uniforms }
+    anaglyphUniforms['image'] = { type: 't', value: texture }
+
+    this.anaglyphPath = new RenderingPipelinePath(
+      this.dispWidth,
+      this.dispHeight,
+      anaglyphUniforms,
+      anaglyphMacros[this.selectedAnaglyph],
+      anaglyphFragmentShader,
+    )
   }
 
   createVideoPlane() {
     const hf = this.videoContoller.getHeightFactor()
     const wf = this.videoContoller.getWidthFactor()
 
-    const aspectRatio = (this.height * hf) / (this.width * wf)
+    const aspectRatio = (this.dispHeight * hf) / (this.dispWidth * wf)
 
     // 処理済み映像の平面
     const geometry = new THREE.PlaneGeometry(1, aspectRatio)
     const material = new THREE.MeshBasicMaterial({
-      map: this.renderTarget.texture,
+      map: this.anaglyphPath.getTexture(),
       side: THREE.FrontSide,
     })
     const plane = new THREE.Mesh(geometry, material)
@@ -75,9 +66,8 @@ class ImageProcessing {
   }
 
   render(renderer) {
-    renderer.setRenderTarget(this.renderTarget)
-    renderer.render(this.scene, this.orthoCamera)
-    renderer.setRenderTarget(null)
+    this.filterPath.render(renderer)
+    this.anaglyphPath.render(renderer)
   }
 }
 

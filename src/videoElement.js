@@ -29,7 +29,7 @@ export class VideoController {
   async load() {
     return new Promise((resolve, reject) => {
       if (!this.video) {
-        reject(new Error('ビデオが設定されていません'))
+        reject(new Error('Video not initialized'))
         return
       }
 
@@ -43,7 +43,7 @@ export class VideoController {
     })
   }
 
-  setVideo(videoName) {
+  async setVideo(videoName) {
     if (this.videoName === videoName) {
       console.log('video reload')
       return
@@ -60,10 +60,10 @@ export class VideoController {
     this.video.load()
     this.video.muted = true
     this.video.loop = true
+    await this.load()
   }
 
-  async setupVideoTexture() {
-    await this.load()
+  getVideoTexture() {
     const videoTexture = new THREE.VideoTexture(this.video)
     videoTexture.minFilter = THREE.NearestFilter
     videoTexture.magFilter = THREE.NearestFilter

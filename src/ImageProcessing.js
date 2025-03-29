@@ -1,62 +1,64 @@
 import * as THREE from 'three'
 import { RenderingPipelinePath } from './renderingPipeline.js'
-import {
-  anaglyphFragmentShader,
-  anaglyphMacros,
-  filterFragmentShader,
-  filterMacros,
-} from './shader.js'
+import { anaglyphFragmentShader, filterFragmentShader } from './shader.js'
 
-class ImageProcessing {
-  constructor(uniforms, selectedAnaglyph, selectedFilter, videoContoller) {
+export class ImageProcessing {
+  constructor(sourceTexture, uniforms, filterDefinesList, anaglyphDefine, videoConfig) {
+    this.sourceTexture = sourceTexture
     this.uniforms = uniforms
-    this.videoContoller = videoContoller
-    this.selectedAnaglyph = selectedAnaglyph
-    this.selectedFilter = selectedFilter
+    this.videoConfig = videoConfig
 
-    const width = this.videoContoller.getVideoWidth()
-    const height = this.videoContoller.getVideoHeight()
+    const sourceVideoWidth = this.videoConfig.width
+    const sourceVideoHeight = this.videoConfig.height
 
-    this.dispWidth = this.videoContoller.getVideoWidth() / 2
-    this.dispHeight = this.videoContoller.getVideoHeight()
+    this.targetWidth = sourceVideoWidth / 2
+    this.targetHeight = sourceVideoHeight
 
-    const sourceTexture = this.videoContoller.getVideoTexture()
+    this.filterPipeline = []
 
-    const filterUniforms = { ...this.uniforms }
-    filterUniforms['image'] = { type: 't', value: sourceTexture }
+    let texture = sourceTexture
+    filterDefinesList.forEach((define) => {
+      console.log('filterDefine:', define)
+      if (define === null) {
+        console.log('define is null')
+        return
+      }
+      const pipelinePath = new RenderingPipelinePath(
+        texture,
+        sourceVideoWidth,
+        sourceVideoHeight,
+        this.uniforms,
+        define,
+        filterFragmentShader,
+      )
+      this.filterPipeline.push(pipelinePath)
+      texture = pipelinePath.getTexture()
+    })
+    console.log('Length of filterPipeline:', this.filterPipeline.length)
 
-    this.filterPath = new RenderingPipelinePath(
-      width,
-      height,
-      filterUniforms,
-      filterMacros[this.selectedFilter],
-      filterFragmentShader,
-    )
-
-    const texture = this.filterPath.getTexture()
-    console.log(texture)
-    const anaglyphUniforms = { ...this.uniforms }
-    anaglyphUniforms['image'] = { type: 't', value: texture }
-
-    this.anaglyphPath = new RenderingPipelinePath(
-      this.dispWidth,
-      this.dispHeight,
-      anaglyphUniforms,
-      anaglyphMacros[this.selectedAnaglyph],
+    const anaglyphPath = new RenderingPipelinePath(
+      texture,
+      this.targetWidth,
+      this.targetHeight,
+      this.uniforms,
+      anaglyphDefine,
       anaglyphFragmentShader,
     )
+    this.anaglyphPath = anaglyphPath
   }
 
-  createVideoPlane() {
-    const hf = this.videoContoller.getHeightFactor()
-    const wf = this.videoContoller.getWidthFactor()
+  createProcessedVideoPlane() {
+    const hf = this.videoConfig.heightFactor
+    const wf = this.videoConfig.widthFactor
 
-    const aspectRatio = (this.dispHeight * hf) / (this.dispWidth * wf)
+    const aspectRatio = (this.targetHeight * hf) / (this.targetWidth * wf)
+
+    const lastTexture = this.anaglyphPath.getTexture()
 
     // 処理済み映像の平面
     const geometry = new THREE.PlaneGeometry(1, aspectRatio)
     const material = new THREE.MeshBasicMaterial({
-      map: this.anaglyphPath.getTexture(),
+      map: lastTexture,
       side: THREE.FrontSide,
     })
     const plane = new THREE.Mesh(geometry, material)
@@ -66,9 +68,9 @@ class ImageProcessing {
   }
 
   render(renderer) {
-    this.filterPath.render(renderer)
+    this.filterPipeline.forEach((pipeline) => {
+      pipeline.render(renderer)
+    })
     this.anaglyphPath.render(renderer)
   }
 }
-
-export { ImageProcessing }

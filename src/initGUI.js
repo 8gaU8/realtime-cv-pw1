@@ -43,7 +43,7 @@ export function initGUI(gui, imageCtrl, videoCtrl) {
   paramFolder.add(imageCtrl.uniforms.scale, 'value', 0.1, 10).name('Scale')
   paramFolder.add(imageCtrl.uniforms.translateX, 'value', 0, 1).name('Translate X')
   paramFolder.add(imageCtrl.uniforms.translateY, 'value', 0, 1).name('Translate Y')
-  paramFolder.add(imageCtrl.uniforms.kernelSize, 'value', 3, 11, 2).name('Kernel Size')
+  paramFolder.add(imageCtrl.uniforms.kernelSizeDiv2, 'value', 1, 10, 1).name('Kernel Size / 2')
   paramFolder.add(imageCtrl.uniforms.sigma, 'value', 0.1, 10).name('Sigma')
 
   // アナグリフ方式用GUI
@@ -57,13 +57,21 @@ export function initGUI(gui, imageCtrl, videoCtrl) {
     anaglyphGUI.add(anaglyphObject, name)
   })
 
-  // フィルター用GUI
-  const filterFolder = gui.addFolder('Filter')
-
+  // フィルター1用GUI
+  const filter1Folder = gui.addFolder('First Filter')
   Object.keys(filterMacros).forEach((name) => {
     const filterObject = {
-      [name]: () => imageCtrl.onFilterChange(name),
+      [name]: () => imageCtrl.onFilterChange(name, 0),
     }
-    filterFolder.add(filterObject, name)
+    filter1Folder.add(filterObject, name)
+  })
+
+  // フィルター2用GUI
+  const filter2Folder = gui.addFolder('Second Filter')
+  Object.keys(filterMacros).forEach((name) => {
+    const filterObject = {
+      [name]: () => imageCtrl.onFilterChange(name, 1),
+    }
+    filter2Folder.add(filterObject, name)
   })
 }

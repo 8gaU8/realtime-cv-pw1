@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { defaultVertexShader } from './shader.js'
 
 export class RenderingPipelinePath {
-  constructor(targetWidth, targetHeight, uniforms, defines, fragmentShader) {
+  constructor(sourceTexture, targetWidth, targetHeight, uniforms, defines, fragmentShader) {
     // init instances
     this.scene = new THREE.Scene()
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1 / Math.pow(2, 53), 1)
@@ -14,20 +14,27 @@ export class RenderingPipelinePath {
     }
     this.renderTarget = new THREE.WebGLRenderTarget(targetWidth, targetHeight, options)
 
-    this._buildPipeline(uniforms, defines, fragmentShader)
+    // add texture to uniforms
+    this.uniforms = { ...uniforms }
+    this.uniforms['image'] = { type: 't', value: sourceTexture }
+
+    this.defines = defines
+    this.fragmentShader = fragmentShader
+
+    this._buildPipeline()
   }
 
   getTexture() {
     return this.renderTarget.texture
   }
 
-  _buildPipeline(uniforms, defines, fragmentShader) {
+  _buildPipeline() {
     const imageProcessingMaterial = new THREE.RawShaderMaterial({
-      uniforms: uniforms,
+      uniforms: this.uniforms,
       vertexShader: defaultVertexShader,
-      fragmentShader: fragmentShader,
+      fragmentShader: this.fragmentShader,
       glslVersion: THREE.GLSL3,
-      defines: defines,
+      defines: this.defines,
     })
 
     // 5 create a plane

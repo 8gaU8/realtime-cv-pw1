@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { ImageProcessing } from './imageProcessing.js'
 import { anaglyphMacros, filterMacros } from './shader.js'
+import { removeIfExists } from './utils.js'
 import { VideoController } from './videoElement.js'
 
 export class ImageProcessingMaterialController {
@@ -11,64 +12,61 @@ export class ImageProcessingMaterialController {
   constructor(scene, videoController) {
     this.scene = scene
     /** @type {VideoController} */
+
     this.videoController = videoController
-    this.selectedAnaglyph = Object.keys(anaglyphMacros)[0]
-    this.selectedFilter = Object.keys(filterMacros)[0]
+    const selectedAnaglyph = Object.keys(anaglyphMacros)[0]
+    this.anaglyphDefine = anaglyphMacros[selectedAnaglyph]
+    const selectedFilter = Object.keys(filterMacros)[0]
+
+    this.filterDefinesList = [filterMacros[selectedFilter], null]
     this.imageObjectProcessed = null
-    this.imageObjectProcessed = null
+    this.imageObjectOriginal = null
 
     this.uniforms = {
-      sizeDiv2: { type: 'i', value: 5 },
       scale: { type: 'f', value: 1.0 },
       translateX: { type: 'f', value: 0.0 },
       translateY: { type: 'f', value: 0.0 },
-      kernelSize: { type: 'i', value: 3 },
+      kernelSizeDiv2: { type: 'i', value: 3 },
       sigma: { type: 'f', value: 0.85 },
     }
 
     this.onVideoChange(videoController.defaultVideoName)
   }
 
-  removeIfExists(name) {
-    const prevObject = this.scene.getObjectByName(name)
-    if (prevObject) {
-      this.scene.remove(prevObject)
-      console.log('removed')
-    }
-  }
-
   updateProcessedProcessed() {
+    // Use filters
     const name = 'videoPlaneProcessed'
-    this.removeIfExists(name)
+    removeIfExists(this.scene, name)
+
     const imageProcessing = new ImageProcessing(
+      this.videoController.getVideoTexture(),
       this.uniforms,
-      this.selectedAnaglyph,
-      this.selectedFilter,
-      this.videoController,
+      this.filterDefinesList,
+      this.anaglyphDefine,
+      this.videoController.getVideoConfig(),
     )
-    const plane = imageProcessing.createVideoPlane()
+    const plane = imageProcessing.createProcessedVideoPlane()
     plane.name = name
-    plane.position.x = 0
     plane.position.y = -this.videoController.getPosY()
-    plane.position.z = 0.2
     this.scene.add(plane)
     this.imageObjectProcessed = imageProcessing
   }
 
   updateProcessedOriginal() {
     const name = 'videoPlaneOriginal'
-    this.removeIfExists(name)
+    removeIfExists(this.scene, name)
+    // Don't apply any filter to the original video
+    const emptyFilterDefinesList = []
     const imageProcessing = new ImageProcessing(
+      this.videoController.getVideoTexture(),
       this.uniforms,
-      this.selectedAnaglyph,
-      'original',
-      this.videoController,
+      emptyFilterDefinesList,
+      this.anaglyphDefine,
+      this.videoController.getVideoConfig(),
     )
-    const plane = imageProcessing.createVideoPlane()
+    const plane = imageProcessing.createProcessedVideoPlane()
     plane.name = name
-    plane.position.x = 0
     plane.position.y = this.videoController.getPosY()
-    plane.position.z = 0.2
     this.scene.add(plane)
     this.imageObjectOriginal = imageProcessing
   }
@@ -78,22 +76,31 @@ export class ImageProcessingMaterialController {
 
     console.log('videoName', videoName)
     await this.videoController.setVideo(videoName)
+
+    this.sourceTexture = this.videoController.getVideoTexture()
     this.updateProcessedOriginal()
     this.updateProcessedProcessed()
   }
 
   onAnaglyphChange(value) {
-    if (this.selectedAnaglyph === value) return
+    const anaglyphDefine = anaglyphMacros[value]
+    if (this.anaglyphDefine === anaglyphDefine) return
 
-    this.selectedAnaglyph = value
+    this.anaglyphDefine = anaglyphDefine
     this.updateProcessedOriginal()
     this.updateProcessedProcessed()
   }
 
-  onFilterChange(value) {
-    if (this.selectedFilter === value) return
-
-    this.selectedFilter = value
+  onFilterChange(selectedFilter, filterIdx) {
+    const filterDefine = filterMacros[selectedFilter]
+    // Don't update if the same filter is selected
+    if (this.filterDefinesList[filterIdx] === filterDefine) return
+    // "original" filter is a special case, it will be skipped in the rendereing pipeline
+    if (selectedFilter === 'original') {
+      this.filterDefinesList[filterIdx] = null
+    } else {
+      this.filterDefinesList[filterIdx] = filterDefine
+    }
     this.updateProcessedProcessed()
   }
 

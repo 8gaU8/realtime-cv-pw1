@@ -5,12 +5,16 @@ import sfURL from '../assets/sf.mp4'
 // ビデオの設定情報
 const videoConfig = {
   'moon.mp4': {
+    height: null,
+    width: null,
     heightFactor: 1,
     widthFactor: 1,
     posY: 0.6,
     path: moonUrl,
   },
   'sf.mp4': {
+    height: null,
+    width: null,
     heightFactor: 1,
     widthFactor: 2,
     posY: 0.3,
@@ -60,7 +64,10 @@ export class VideoController {
     this.video.load()
     this.video.muted = true
     this.video.loop = true
+
     await this.load()
+    videoConfig[this.videoName].height = this.video.videoHeight
+    videoConfig[this.videoName].width = this.video.videoWidth
   }
 
   getVideoTexture() {
@@ -90,6 +97,10 @@ export class VideoController {
 
   getPosY() {
     return videoConfig[this.videoName].posY
+  }
+
+  getVideoConfig() {
+    return videoConfig[this.videoName]
   }
 
   togglePlayPause() {

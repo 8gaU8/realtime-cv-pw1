@@ -24,4 +24,10 @@ const filterMacros = {
   original: { 'FILTER(X, Y)': 'texelFetch(image, ivec2(X, Y), 0 );' },
 }
 
-export { filterFragmentShader, defaultVertexShader, anaglyphFragmentShader, anaglyphMacros, filterMacros }
+export {
+  filterFragmentShader,
+  defaultVertexShader,
+  anaglyphFragmentShader,
+  anaglyphMacros,
+  filterMacros,
+}

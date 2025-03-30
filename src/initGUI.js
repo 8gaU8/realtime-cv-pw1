@@ -1,18 +1,23 @@
+/**
+ * GUI Initialization Module
+ * Sets up the user interface controls for manipulating video and image processing parameters
+ */
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
 import { anaglyphMacros, filterMacros } from './shader.js'
 import { ImageProcessingMaterialController } from './imageProcessingController.js'
 import { VideoController } from './videoElement.js'
 
 /**
- * GUIの初期化
- * @param {GUI} gui - GUI
- * @param {ImageProcessingMaterialController} imageCtrl - 画像処理コントローラー
- * @param {VideoController} videoCtrl - ビデオコントローラー
+ * Initialize the GUI for controlling video and image processing
+ * @param {GUI} gui - GUI instance
+ * @param {ImageProcessingMaterialController} materialCtrl - Image processing controller
+ * @param {VideoController} videoCtrl - Video controller
  */
-export function initGUI(gui, imageCtrl, videoCtrl) {
-  // ビデオコントロール用GUI
+export function initGUI(gui, materialCtrl, videoCtrl) {
+  // Video control GUI
   const videoFolder = gui.addFolder('Video Control')
 
+  // Add play/pause button
   videoFolder
     .add(
       {
@@ -20,50 +25,81 @@ export function initGUI(gui, imageCtrl, videoCtrl) {
       },
       'pausePlay',
     )
-    .name('Pause/play video')
+    .name('Pause/Play video')
 
+  // Add skip forward button
   videoFolder
     .add(
       {
-        add10sec: () => videoCtrl.add10sec(),
+        add10sec: () => videoCtrl.adjustVideoTime(+10),
       },
       'add10sec',
     )
     .name('Add 10 seconds')
 
   videoFolder
+    .add(
+      {
+        sub10sec: () => videoCtrl.adjustVideoTime(-10),
+      },
+      'sub10sec',
+    )
+    .name('Back 10 seconds')
+
+  // Add video selection dropdown
+  videoFolder
     .add({ video: videoCtrl.defaultVideoName }, 'video', videoCtrl.videoNames)
     .name('Video')
     .onChange((videoName) => {
-      imageCtrl.onVideoChange(videoName)
+      materialCtrl.onVideoChange(videoName)
     })
 
-  // 変換パラメータ用GUI
+  // Transform parameters controls
   const paramFolder = gui.addFolder('Transform')
-  paramFolder.add(imageCtrl.uniforms.scale, 'value', 0.1, 10).name('Scale')
-  paramFolder.add(imageCtrl.uniforms.translateX, 'value', 0, 1).name('Translate X')
-  paramFolder.add(imageCtrl.uniforms.translateY, 'value', 0, 1).name('Translate Y')
-  paramFolder.add(imageCtrl.uniforms.kernelSize, 'value', 3, 151, 2).name('Kernel Size')
-  paramFolder.add(imageCtrl.uniforms.sigma, 'value', 0.1, 10).name('Sigma')
+  paramFolder.add(materialCtrl.uniforms.scale, 'value', 0.1, 10).name('Scale')
+  paramFolder.add(materialCtrl.uniforms.translateX, 'value', 0, 1).name('Translate X')
+  paramFolder.add(materialCtrl.uniforms.translateY, 'value', 0, 1).name('Translate Y')
 
-  // アナグリフ方式用GUI
-  const anaglyphGUI = gui.addFolder('Anaglyph Methods')
+  // Filter parameters controls
+  const filterParamFolder = gui.addFolder('Filter Parameters')
+  filterParamFolder
+    .add(materialCtrl.uniforms.kernelSizeDiv2, 'value', 1, 10, 1)
+    .name('Kernel Size / 2')
+  filterParamFolder.add(materialCtrl.uniforms.sigma, 'value', 0.1, 10).name('Sigma')
 
-  // 各アナグリフ方式のボタンを生成
-  Object.keys(anaglyphMacros).forEach((name) => {
-    const anaglyphObject = {
-      [name]: () => imageCtrl.onAnaglyphChange(name),
-    }
-    anaglyphGUI.add(anaglyphObject, name)
-  })
+  // Anaglyph method selection folder
+  const anaglyphGUI = gui.addFolder('Anaglyph')
+  anaglyphGUI
+    .add({ value: Object.keys(anaglyphMacros)[0] }, 'value', Object.keys(anaglyphMacros))
+    .name('Method')
+    .onChange((name) => {
+      materialCtrl.onAnaglyphChange(name)
+    })
 
-  // フィルター用GUI
-  const filterFolder = gui.addFolder('Filter')
+  // First filter selection folder
+  const filtersFolder = gui.addFolder('Filters')
+  const nbFilter = materialCtrl.nbFilter
+  for (let i = 0; i < nbFilter; i++) {
+    filtersFolder
+      .add({ value: Object.keys(filterMacros)[0] }, 'value', Object.keys(filterMacros))
+      .name(`Filter ${i + 1}`)
+      .onChange((name) => {
+        materialCtrl.onFilterChange(name, i)
+      })
+  }
 
-  Object.keys(filterMacros).forEach((name) => {
-    const filterObject = {
-      [name]: () => imageCtrl.onFilterChange(name),
-    }
-    filterFolder.add(filterObject, name)
-  })
+  // filtersFolder
+  //   .add({ value: Object.keys(filterMacros)[0] }, 'value', Object.keys(filterMacros))
+  //   .name('Filter 1')
+  //   .onChange((name) => {
+  //     materialCtrl.onFilterChange(name, 0)
+  //   })
+
+  // // Second filter selection folder
+  // filtersFolder
+  //   .add({ value: Object.keys(filterMacros)[0] }, 'value', Object.keys(filterMacros))
+  //   .name('Filter 2')
+  //   .onChange((name) => {
+  //     materialCtrl.onFilterChange(name, 1)
+  //   })
 }

@@ -1,71 +1,64 @@
 import * as THREE from 'three'
-import { anaglyphMacros, filterMacros, fragmentShader, vertexShader } from './shader.js'
-import { VideoController } from './videoElement.js'
-import { ImageProcessingMaterialController } from './imageProcessingController.js'
+import { RenderingPipelinePass } from './renderingPipeline.js'
+import { anaglyphFragmentShader, filterFragmentShader } from './shader.js'
 
-class ImageProcessing {
-  /**
-   *
-   * @param {ImageProcessingMaterialController.uniforms} uniforms
-   * @param {string} selectedAnaglyph
-   * @param {string} selectedFilter
-   * @param {VideoController} videoContoller
-   */
-  constructor(uniforms, selectedAnaglyph, selectedFilter, videoContoller) {
-    this.videoContoller = videoContoller
+export class ImageProcessing {
+  constructor(sourceTexture, uniforms, filterDefinesList, anaglyphDefine, videoConfig) {
+    this.sourceTexture = sourceTexture
+    this.uniforms = uniforms
+    this.videoConfig = videoConfig
 
-    // Define the macros for anaglyph and filter
-    const anaglyphDefine = anaglyphMacros[selectedAnaglyph]
-    const filterDefine = filterMacros[selectedFilter]
-    const defines = {
-      ...anaglyphDefine,
-      ...filterDefine,
-    }
-    console.log(defines)
+    const sourceVideoWidth = this.videoConfig.width
+    const sourceVideoHeight = this.videoConfig.height
 
-    const imageProcessingMaterial = new THREE.RawShaderMaterial({
-      uniforms: uniforms,
-      vertexShader: vertexShader,
-      fragmentShader: fragmentShader,
-      glslVersion: THREE.GLSL3,
-      defines: defines,
+    this.targetWidth = sourceVideoWidth / 2
+    this.targetHeight = sourceVideoHeight
+
+    this.filterPipeline = []
+
+    let texture = sourceTexture
+    filterDefinesList.forEach((define) => {
+      console.log('filterDefine:', define)
+      if (define === null) {
+        console.log('define is null')
+        return
+      }
+      const pipelinePass = new RenderingPipelinePass(
+        texture,
+        sourceVideoWidth,
+        sourceVideoHeight,
+        this.uniforms,
+        define,
+        filterFragmentShader,
+      )
+      this.filterPipeline.push(pipelinePass)
+      texture = pipelinePass.getTexture()
     })
+    console.log('Length of filterPipeline:', this.filterPipeline.length)
 
-
-    //3 rtt setup
-    this.scene = new THREE.Scene()
-    this.orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1 / Math.pow(2, 53), 1)
-
-    //4 create a target texture
-    const options = {
-      minFilter: THREE.NearestFilter,
-      magFilter: THREE.NearestFilter,
-      format: THREE.RGBAFormat,
-      type: THREE.FloatType,
-    }
-    this.height = this.videoContoller.getVideoHeight()
-    this.width = this.videoContoller.getVideoWidth() / 2
-    this.renderTarget = new THREE.WebGLRenderTarget(this.width, this.height, options)
-
-    //5 create a plane
-    const positions = new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0])
-    const positionsAttribute = new THREE.BufferAttribute(positions, 3)
-    const geom = new THREE.BufferGeometry()
-    geom.setAttribute('position', positionsAttribute)
-    const plane = new THREE.Mesh(geom, imageProcessingMaterial)
-    this.scene.add(plane)
+    const anaglyphPath = new RenderingPipelinePass(
+      texture,
+      this.targetWidth,
+      this.targetHeight,
+      this.uniforms,
+      anaglyphDefine,
+      anaglyphFragmentShader,
+    )
+    this.anaglyphPath = anaglyphPath
   }
 
   createVideoPlane() {
-    const hf = this.videoContoller.getHeightFactor()
-    const wf = this.videoContoller.getWidthFactor()
+    const hf = this.videoConfig.heightFactor
+    const wf = this.videoConfig.widthFactor
 
-    const aspectRatio = (this.height * hf) / (this.width * wf)
+    const aspectRatio = (this.targetHeight * hf) / (this.targetWidth * wf)
+
+    const lastTexture = this.anaglyphPath.getTexture()
 
     // 処理済み映像の平面
     const geometry = new THREE.PlaneGeometry(1, aspectRatio)
     const material = new THREE.MeshBasicMaterial({
-      map: this.renderTarget.texture,
+      map: lastTexture,
       side: THREE.FrontSide,
     })
     const plane = new THREE.Mesh(geometry, material)
@@ -75,10 +68,9 @@ class ImageProcessing {
   }
 
   render(renderer) {
-    renderer.setRenderTarget(this.renderTarget)
-    renderer.render(this.scene, this.orthoCamera)
-    renderer.setRenderTarget(null)
+    this.filterPipeline.forEach((pipeline) => {
+      pipeline.render(renderer)
+    })
+    this.anaglyphPath.render(renderer)
   }
 }
-
-export { ImageProcessing }

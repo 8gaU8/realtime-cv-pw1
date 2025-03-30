@@ -1,106 +1,144 @@
+/**
+ * Image Processing Material Controller Module
+ * Controls the image processing pipeline, manages filter application,
+ * and updates the display of processed and original videos
+ */
 import * as THREE from 'three'
 import { ImageProcessing } from './imageProcessing.js'
 import { anaglyphMacros, filterMacros } from './shader.js'
+import { removeObjectByName } from './utils.js'
 import { VideoController } from './videoElement.js'
 
 export class ImageProcessingMaterialController {
   /**
-   * @param {THREE.Scene} scene - メインシーン
-   * @param {VideoController} videoController - ビデオコントローラー
+   * Creates a controller for managing image processing operations on video
+   * @param {THREE.Scene} scene
+   * @param {VideoController} videoController
    */
-  constructor(scene, videoController) {
+  constructor(scene, videoController, nbFilter) {
     this.scene = scene
+
     /** @type {VideoController} */
     this.videoController = videoController
-    this.selectedAnaglyph = Object.keys(anaglyphMacros)[0]
-    this.selectedFilter = Object.keys(filterMacros)[0]
-    this.imageObjectProcessed = null
-    this.imageObjectProcessed = null
+    this.nbFilter = nbFilter
 
+    // Initialize with the first anaglyph method
+    const selectedAnaglyph = Object.keys(anaglyphMacros)[0]
+    this.anaglyphDefine = anaglyphMacros[selectedAnaglyph]
+
+    // Initialize with the first filter method
+    const defaultFilterName = Object.keys(filterMacros)[0]
+
+    // Array for holding filter defines (up to two filters can be applied)
+    this.filterDefinesList = new Array(this.nbFilter)
+    for (let i = 0; i < this.nbFilter; i++) {
+      this.filterDefinesList[i] = filterMacros[defaultFilterName]
+    }
+
+    // Initialize image planes
+    this.imageObjectProcessed = null
+    this.imageObjectOriginal = null
+
+    // Setup uniform values for shaders
     this.uniforms = {
-      sizeDiv2: { type: 'i', value: 5 },
       scale: { type: 'f', value: 1.0 },
       translateX: { type: 'f', value: 0.0 },
       translateY: { type: 'f', value: 0.0 },
-      image: { type: 't', value: null },
-      kernelSize: { type: 'i', value: 3 },
+      kernelSizeDiv2: { type: 'i', value: 3 },
       sigma: { type: 'f', value: 0.85 },
     }
 
+    // Initialize with default video
     this.onVideoChange(videoController.defaultVideoName)
   }
 
-  removeIfExists(name) {
-    const prevObject = this.scene.getObjectByName(name)
-    if (prevObject) {
-      this.scene.remove(prevObject)
-      console.log('removed')
-    }
-  }
-
-  updateProcessedProcessed() {
+  /**
+   * Updates the processed video display with current filters applied
+   */
+  updateProcessedPlane() {
+    // Use filters
     const name = 'videoPlaneProcessed'
-    this.removeIfExists(name)
+    const posY = -this.videoController.getVideoConfig().posY
+    const filterDefinesList = this.filterDefinesList
 
-    const imageProcessing = new ImageProcessing(
-      this.uniforms,
-      this.selectedAnaglyph,
-      this.selectedFilter,
-      this.videoController,
-    )
-    const plane = imageProcessing.createVideoPlane()
-    plane.name = name
-    plane.position.x = 0
-    plane.position.y = -this.videoController.getPosY()
-    plane.position.z = 0.2
-    this.scene.add(plane)
+    const imageProcessing = this._createPlane(name, posY, filterDefinesList)
     this.imageObjectProcessed = imageProcessing
   }
 
-  updateProcessedOriginal() {
+  /**
+   * Updates the original video display with only anaglyph effect
+   */
+  updateOriginalPlane() {
     const name = 'videoPlaneOriginal'
-    this.removeIfExists(name)
+    const posY = this.videoController.getVideoConfig().posY
+    const filterDefinesList = []
 
-    const imageProcessing = new ImageProcessing(
-      this.uniforms,
-      this.selectedAnaglyph,
-      'original',
-      this.videoController,
-    )
-    const plane = imageProcessing.createVideoPlane()
-    plane.name = name
-    plane.position.x = 0
-    plane.position.y = this.videoController.getPosY()
-    plane.position.z = 0.2
-    this.scene.add(plane)
+    const imageProcessing = this._createPlane(name, posY, filterDefinesList)
     this.imageObjectOriginal = imageProcessing
   }
 
+  _createPlane(name, posY, filterDefinesList) {
+    removeObjectByName(this.scene, name)
+    // Don't apply any filter to the original video
+    const imageProcessing = new ImageProcessing(
+      this.videoController.getVideoTexture(),
+      this.uniforms,
+      filterDefinesList,
+      this.anaglyphDefine,
+      this.videoController.getVideoConfig(),
+    )
+    const plane = imageProcessing.createVideoPlane()
+    plane.name = name
+    plane.position.y = posY
+    this.scene.add(plane)
+    return imageProcessing
+  }
+
+  /**
+   * Handles video change event
+   * @param {string} videoName - Name of the video to switch to
+   */
   async onVideoChange(videoName) {
     if (this.videoController.videoName === videoName) return
 
     console.log('videoName', videoName)
-    this.videoController.setVideo(videoName)
-    this.uniforms.image.value = await this.videoController.setupVideoTexture()
-    this.updateProcessedOriginal()
-    this.updateProcessedProcessed()
+    await this.videoController.setVideo(videoName)
+
+    this.sourceTexture = this.videoController.getVideoTexture()
+    this.updateOriginalPlane()
+    this.updateProcessedPlane()
   }
 
+  /**
+   * Handles anaglyph method change event
+   * @param {string} value - Name of the anaglyph method to use
+   */
   onAnaglyphChange(value) {
-    if (this.selectedAnaglyph === value) return
+    const anaglyphDefine = anaglyphMacros[value]
+    if (this.anaglyphDefine === anaglyphDefine) return
 
-    this.selectedAnaglyph = value
-    this.updateProcessedOriginal()
-    this.updateProcessedProcessed()
+    this.anaglyphDefine = anaglyphDefine
+    this.updateOriginalPlane()
+    this.updateProcessedPlane()
   }
 
-  onFilterChange(value) {
-    if (this.selectedFilter === value) return
-
-    this.selectedFilter = value
-    this.updateProcessedProcessed()
+  /**
+   * Handles filter change event
+   * @param {string} selectedFilter - Name of the filter to apply
+   * @param {number} filterIdx - Index of the filter slot (0 or 1)
+   */
+  onFilterChange(selectedFilter, filterIdx) {
+    const filterDefine = filterMacros[selectedFilter]
+    // Don't update if the same filter is selected
+    if (this.filterDefinesList[filterIdx] === filterDefine) return
+    this.filterDefinesList[filterIdx] = filterDefine
+    this.updateProcessedPlane()
   }
 
+  /**
+   * Renders both original and processed video planes
+   * @param {THREE.WebGLRenderer} renderer - WebGL renderer
+   */
   render(renderer) {
     if (this.videoController.ready()) {
       if (this.imageObjectProcessed) {

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { RenderingPipelinePath } from './renderingPipeline.js'
+import { RenderingPipelinePass } from './renderingPipeline.js'
 import { anaglyphFragmentShader, filterFragmentShader } from './shader.js'
 
 export class ImageProcessing {
@@ -23,7 +23,7 @@ export class ImageProcessing {
         console.log('define is null')
         return
       }
-      const pipelinePath = new RenderingPipelinePath(
+      const pipelinePass = new RenderingPipelinePass(
         texture,
         sourceVideoWidth,
         sourceVideoHeight,
@@ -31,12 +31,12 @@ export class ImageProcessing {
         define,
         filterFragmentShader,
       )
-      this.filterPipeline.push(pipelinePath)
-      texture = pipelinePath.getTexture()
+      this.filterPipeline.push(pipelinePass)
+      texture = pipelinePass.getTexture()
     })
     console.log('Length of filterPipeline:', this.filterPipeline.length)
 
-    const anaglyphPath = new RenderingPipelinePath(
+    const anaglyphPath = new RenderingPipelinePass(
       texture,
       this.targetWidth,
       this.targetHeight,
@@ -47,7 +47,7 @@ export class ImageProcessing {
     this.anaglyphPath = anaglyphPath
   }
 
-  createProcessedVideoPlane() {
+  createVideoPlane() {
     const hf = this.videoConfig.heightFactor
     const wf = this.videoConfig.widthFactor
 

@@ -1,20 +1,21 @@
 // Utility functions for the app
 
-export const onWindowResizeFactory = (camera, renderer) => {
-  const onWindowResize = () => {
+// Create a handler for resizing the window and updating the camera and renderer
+export const createWindowResizeHandler = (camera, renderer) => {
+  const handleResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
 
     renderer.setSize(window.innerWidth, window.innerHeight)
   }
-  return onWindowResize
+  return handleResize
 }
 
-// remove an object named '$name' from the scene if it exists
-export const removeIfExists = (scene, name) => {
-  const prevObject = scene.getObjectByName(name)
-  if (prevObject) {
-    scene.remove(prevObject)
-    console.log('removed')
+// Remove an object by name from the scene if it exists
+export const removeObjectByName = (scene, name) => {
+  const targetObject = scene.getObjectByName(name)
+  if (targetObject) {
+    scene.remove(targetObject)
+    console.log('Object removed:', name)
   }
 }

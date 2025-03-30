@@ -10,6 +10,7 @@ uniform float sigma;
 out vec4 out_FragColor;
 
 #define PI 3.1415926
+#define MEDIAN_KERNEL_SIZE 49
     
 vec4 averageFilter(int centerX, int centerY) {
     vec4 textureValue = vec4(0.0);
@@ -59,37 +60,44 @@ vec4 separableGaussianFilter(int centerX, int centerY){
     float twoSigmaSquare = 2.0 * sigmaSquare;
     float sqrt2PiSigma = sqrt(2.0 * PI * sigmaSquare);
 
-    for (int x = -kernelSizeDiv2; x <= kernelSizeDiv2; x++) {
-        float weight = exp(-(float(x*x) / twoSigmaSquare)) / sqrt2PiSigma;
-        textureValue += texelFetch( image, ivec2(centerX + x, centerY), 0 ) * weight;
-        textureValue += texelFetch( image, ivec2(centerX, centerY + x), 0 ) * weight;
+    for (int kernelIdx = -kernelSizeDiv2; kernelIdx <= kernelSizeDiv2; kernelIdx++) {
+        float weight = exp(-(float(kernelIdx*kernelIdx) / twoSigmaSquare)) / sqrt2PiSigma;
+        textureValue += texelFetch( image, ivec2(centerX + kernelIdx, centerY), 0 ) * weight;
+        textureValue += texelFetch( image, ivec2(centerX, centerY + kernelIdx), 0 ) * weight;
     }
     return textureValue;
 }
 
 vec4 medianFilter(int centerX, int centerY) {
     int kernelSizeDiv2 = min(kernelSizeDiv2, 3);
-    vec3 textureValues[49];
+
+    float values[MEDIAN_KERNEL_SIZE];
+    vec3 colors[MEDIAN_KERNEL_SIZE];
     int index = 0;
-    // Collect texture values in a 2D array
-    for (int i = 0; i < 2 * kernelSizeDiv2 + 1; i++) {
-        for (int j = 0; j < 2 * kernelSizeDiv2 + 1; j++) {
-            textureValues[index] = texelFetch( image, ivec2(centerX + i, centerY + j), 0 ).rgb;
+    for (int i = -kernelSizeDiv2; i <= kernelSizeDiv2; i++) {
+        for (int j = -kernelSizeDiv2; j <= kernelSizeDiv2; j++) {
+            vec3 color = texelFetch(image, ivec2(centerX + i, centerY + j), 0).rgb;
+            colors[index] = color;
+            values[index] = length(color);
             index++;
         }
     }
-    // bubble sort
-    for (int i = 0; i < kernelSizeDiv2 * kernelSizeDiv2 - 1; i++) {
-        for (int j = 0; j < kernelSizeDiv2 * kernelSizeDiv2 - i - 1; j++) {
-            if (length(textureValues[j]) > length(textureValues[j + 1])) {
-                vec3 temp = textureValues[j];
-                textureValues[j] = textureValues[j + 1];
-                textureValues[j + 1] = temp;
-            }
+    // insertion sort
+    for (int i = 1; i < MEDIAN_KERNEL_SIZE; ++i) {
+        float key = values[i];
+        vec3 col = colors[i];
+        int j = i - 1;
+        while (j >= 0 && values[j] > key) {
+            values[j + 1] = values[j];
+            colors[j + 1] = colors[j];
+            j--;
         }
+        values[j + 1] = key;
+        colors[j + 1] = col;
     }
-    return vec4(textureValues[kernelSizeDiv2 * kernelSizeDiv2 / 2], 0);
+    return vec4(colors[index / 2], 1);
 }
+
 
 void main(void) {
     ivec2 texSize2d = textureSize(image, 0);
@@ -97,8 +105,6 @@ void main(void) {
     // FILTER is macro defined at /src/shader.js
     vec4 textureValue = FILTER(int(gl_FragCoord.x), int(gl_FragCoord.y));
 
-    // out_FragColor.rgb = textureValue.rgb;
     out_FragColor = textureValue;
-    out_FragColor.a = 1.0;
 
 }

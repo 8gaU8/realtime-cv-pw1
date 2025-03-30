@@ -15,13 +15,13 @@ const anaglyphMacros = {
 }
 
 const filterMacros = {
+  'No Filter': null,
   gaussianFilter: { 'FILTER(X, Y)': 'gaussianFilter(X, Y)' },
   laplacian: { 'FILTER(X, Y)': 'laplacian(X, Y)' },
   separableGaussianFilter: {
     'FILTER(X, Y)': 'separableGaussianFilter(X, Y)',
   },
   medianFilter: { 'FILTER(X, Y)': 'medianFilter(X, Y)' },
-  original: { 'FILTER(X, Y)': 'texelFetch(image, ivec2(X, Y), 0 );' },
 }
 
 export {

@@ -32,7 +32,8 @@ async function main() {
   const videoController = new VideoController()
 
   // Initialize material controller for image processing
-  const materialController = new ImageProcessingMaterialController(scene, videoController)
+  const nbFilter = 2
+  const materialController = new ImageProcessingMaterialController(scene, videoController, nbFilter)
 
   // Setup GUI controls
   const rootGui = new GUI()

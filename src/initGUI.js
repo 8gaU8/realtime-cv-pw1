@@ -78,18 +78,28 @@ export function initGUI(gui, materialCtrl, videoCtrl) {
 
   // First filter selection folder
   const filtersFolder = gui.addFolder('Filters')
-  filtersFolder
-    .add({ value: Object.keys(filterMacros)[0] }, 'value', Object.keys(filterMacros))
-    .name('Filter 1')
-    .onChange((name) => {
-      materialCtrl.onFilterChange(name, 0)
-    })
+  const nbFilter = materialCtrl.nbFilter
+  for (let i = 0; i < nbFilter; i++) {
+    filtersFolder
+      .add({ value: Object.keys(filterMacros)[0] }, 'value', Object.keys(filterMacros))
+      .name(`Filter ${i + 1}`)
+      .onChange((name) => {
+        materialCtrl.onFilterChange(name, i)
+      })
+  }
 
-  // Second filter selection folder
-  filtersFolder
-    .add({ value: Object.keys(filterMacros)[0] }, 'value', Object.keys(filterMacros))
-    .name('Filter 2')
-    .onChange((name) => {
-      materialCtrl.onFilterChange(name, 1)
-    })
+  // filtersFolder
+  //   .add({ value: Object.keys(filterMacros)[0] }, 'value', Object.keys(filterMacros))
+  //   .name('Filter 1')
+  //   .onChange((name) => {
+  //     materialCtrl.onFilterChange(name, 0)
+  //   })
+
+  // // Second filter selection folder
+  // filtersFolder
+  //   .add({ value: Object.keys(filterMacros)[0] }, 'value', Object.keys(filterMacros))
+  //   .name('Filter 2')
+  //   .onChange((name) => {
+  //     materialCtrl.onFilterChange(name, 1)
+  //   })
 }

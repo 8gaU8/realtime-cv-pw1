@@ -15,11 +15,12 @@ export class ImageProcessingMaterialController {
    * @param {THREE.Scene} scene
    * @param {VideoController} videoController
    */
-  constructor(scene, videoController) {
+  constructor(scene, videoController, nbFilter) {
     this.scene = scene
-    /** @type {VideoController} */
 
+    /** @type {VideoController} */
     this.videoController = videoController
+    this.nbFilter = nbFilter
 
     // Initialize with the first anaglyph method
     const selectedAnaglyph = Object.keys(anaglyphMacros)[0]
@@ -29,7 +30,12 @@ export class ImageProcessingMaterialController {
     const defaultFilterName = Object.keys(filterMacros)[0]
 
     // Array for holding filter defines (up to two filters can be applied)
-    this.filterDefinesList = [filterMacros[defaultFilterName], filterMacros[defaultFilterName]]
+    this.filterDefinesList = new Array(this.nbFilter)
+    for (let i = 0; i < this.nbFilter; i++) {
+      this.filterDefinesList[i] = filterMacros[defaultFilterName]
+    }
+
+    // Initialize image planes
     this.imageObjectProcessed = null
     this.imageObjectOriginal = null
 

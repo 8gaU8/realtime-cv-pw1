@@ -60,9 +60,9 @@ export class ImageProcessingMaterialController {
    * Updates the processed video display with current filters applied
    */
   updateProcessedPlane() {
-    // Use filters
     const name = 'videoPlaneProcessed'
     const posY = -this.videoController.getVideoConfig().posY
+    // Apply selected filters
     const filterDefinesList = this.filterDefinesList
 
     const imageProcessing = this._createPlane(name, posY, filterDefinesList)
@@ -75,6 +75,7 @@ export class ImageProcessingMaterialController {
   updateOriginalPlane() {
     const name = 'videoPlaneOriginal'
     const posY = this.videoController.getVideoConfig().posY
+    // Don't apply any filter to the original video
     const filterDefinesList = []
 
     const imageProcessing = this._createPlane(name, posY, filterDefinesList)
@@ -83,7 +84,6 @@ export class ImageProcessingMaterialController {
 
   _createPlane(name, posY, filterDefinesList) {
     removeObjectByName(this.scene, name)
-    // Don't apply any filter to the original video
     const imageProcessing = new ImageProcessing(
       this.videoController.getVideoTexture(),
       this.uniforms,

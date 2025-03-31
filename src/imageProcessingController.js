@@ -49,7 +49,11 @@ export class ImageProcessingMaterialController {
     }
 
     // Initialize with default video
-    this.onVideoChange(videoController.defaultVideoName)
+    this.init(videoController.defaultVideoName)
+  }
+
+  init(videoName) {
+    this.onVideoChange(videoName)
   }
 
   /**

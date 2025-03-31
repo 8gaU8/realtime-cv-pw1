@@ -20,7 +20,7 @@ export class RenderingPipelinePass {
     // Initialize scene and camera for this render pass
     this.scene = new THREE.Scene()
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1 / Math.pow(2, 53), 1)
-    
+
     // Configure render target with appropriate settings for image processing
     const options = {
       minFilter: THREE.NearestFilter,

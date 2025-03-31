@@ -131,7 +131,19 @@ export class ImageProcessingMaterialController {
     const filterDefine = filterMacros[selectedFilter]
     // Don't update if the same filter is selected
     if (this.filterDefinesList[filterIdx] === filterDefine) return
+
+    // special case for separable filter
+    if (selectedFilter === 'separableGaussianFilter') {
+      this.setSeparatableFilter()
+      return
+    }
     this.filterDefinesList[filterIdx] = filterDefine
+    this.updateProcessedPlane()
+  }
+
+  setSeparatableFilter() {
+    this.filterDefinesList[0] = filterMacros.separableGaussianFilterHorizontal
+    this.filterDefinesList[1] = filterMacros.separableGaussianFilterVertical
     this.updateProcessedPlane()
   }
 

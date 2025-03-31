@@ -17,10 +17,10 @@ async function main() {
   const renderer = initRenderer()
   const camera = initCamera()
   const scene = new THREE.Scene()
-  
+
   // Set up orbit controls for interactive camera movement
   const orbitControls = new OrbitControls(camera, renderer.domElement)
-  
+
   // Add performance stats display
   const stats = new Stats()
   document.body.appendChild(stats.dom)

@@ -36,7 +36,7 @@ vec4 gaussianFilter(int centerX, int centerY) {
     return textureValue;
 }
 
-vec4 laplacian(int centerX, int centerY){
+vec4 laplacianFilter(int centerX, int centerY){
     // https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
 
     // Kernel of Laplacian filter
@@ -53,7 +53,21 @@ vec4 laplacian(int centerX, int centerY){
 
 }
 
-vec4 separableGaussianFilter(int centerX, int centerY){
+vec4 separableGaussianFilterVertical(int centerX, int centerY){
+    // https://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf 3.6 Separability
+    vec4 textureValue = vec4(0.0);
+    float sigmaSquare = sigma * sigma;
+    float twoSigmaSquare = 2.0 * sigmaSquare;
+    float sqrt2PiSigma = sqrt(2.0 * PI * sigmaSquare);
+
+    for (int kernelIdx = -kernelSizeDiv2; kernelIdx <= kernelSizeDiv2; kernelIdx++) {
+        float weight = exp(-(float(kernelIdx*kernelIdx) / twoSigmaSquare)) / sqrt2PiSigma;
+        textureValue += texelFetch( image, ivec2(centerX, centerY + kernelIdx), 0 ) * weight;
+    }
+    return textureValue;
+}
+
+vec4 separableGaussianFilterHorizontal(int centerX, int centerY){
     // https://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf 3.6 Separability
     vec4 textureValue = vec4(0.0);
     float sigmaSquare = sigma * sigma;
@@ -63,7 +77,6 @@ vec4 separableGaussianFilter(int centerX, int centerY){
     for (int kernelIdx = -kernelSizeDiv2; kernelIdx <= kernelSizeDiv2; kernelIdx++) {
         float weight = exp(-(float(kernelIdx*kernelIdx) / twoSigmaSquare)) / sqrt2PiSigma;
         textureValue += texelFetch( image, ivec2(centerX + kernelIdx, centerY), 0 ) * weight;
-        textureValue += texelFetch( image, ivec2(centerX, centerY + kernelIdx), 0 ) * weight;
     }
     return textureValue;
 }

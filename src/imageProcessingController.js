@@ -138,16 +138,18 @@ export class ImageProcessingMaterialController {
 
     // special case for separable filter
     if (selectedFilter === 'separableGaussianFilter') {
-      this.setSeparatableFilter()
+      this.setSeparatableFilter(filterIdx)
       return
     }
     this.filterDefinesList[filterIdx] = filterDefine
     this.updateProcessedPlane()
   }
 
-  setSeparatableFilter() {
-    this.filterDefinesList[0] = filterMacros.separableGaussianFilterHorizontal
-    this.filterDefinesList[1] = filterMacros.separableGaussianFilterVertical
+  setSeparatableFilter(filterIdx) {
+    if (filterIdx + 1 >= this.filterDefinesList.length)
+      throw new Error('Invalid position of separable filter')
+    this.filterDefinesList[filterIdx] = filterMacros.separableGaussianFilterHorizontal
+    this.filterDefinesList[filterIdx + 1] = filterMacros.separableGaussianFilterVertical
     this.updateProcessedPlane()
   }
 

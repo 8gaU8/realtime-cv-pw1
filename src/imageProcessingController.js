@@ -157,12 +157,8 @@ export class ImageProcessingMaterialController {
    */
   render(renderer) {
     if (this.videoController.ready()) {
-      if (this.imageObjectProcessed) {
-        this.imageObjectProcessed.render(renderer)
-      }
-      if (this.imageObjectOriginal) {
-        this.imageObjectOriginal.render(renderer)
-      }
+      if (this.imageObjectProcessed) this.imageObjectProcessed.render(renderer)
+      if (this.imageObjectOriginal) this.imageObjectOriginal.render(renderer)
     }
   }
 }

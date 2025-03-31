@@ -14,13 +14,7 @@ const anaglyphMacros = {
   },
 }
 
-const anaglyphMacrosName = [
-  'trueAnaglyph',
-  'colorAnaglyph',
-  'grayAnaglyph',
-  'half ColorAnaglyph',
-  'optimizedAnaglyph',
-]
+const anaglyphMacrosName = Object.keys(anaglyphMacros)
 
 const filterMacros = {
   'No Filter': null,

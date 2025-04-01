@@ -66,11 +66,14 @@ export class ImageProcessingMaterialController {
     const filterDefinesList = this.filterDefinesList
 
     const imageProcessing = this._createPlane(name, posY, filterDefinesList)
+    // Store the created image processing instance for later rendering
     this.imageObjectProcessed = imageProcessing
   }
 
   /**
    * Updates the original video display with only anaglyph effect
+   * Creates a new plane with the original video texture using only the anaglyph effect without filters
+   * This provides a comparison view to the processed version
    */
   updateOriginalPlane() {
     const name = 'videoPlaneOriginal'
@@ -82,8 +85,19 @@ export class ImageProcessingMaterialController {
     this.imageObjectOriginal = imageProcessing
   }
 
+  /**
+   * Creates a video plane with specified filters and position
+   * @private
+   * @param {string} name - Unique name for the mesh in the scene
+   * @param {number} posY - Y position of the plane in the scene
+   * @param {Array<Object|null>} filterDefinesList - List of shader defines for filters to apply
+   * @returns {ImageProcessing} The created image processing instance
+   */
   _createPlane(name, posY, filterDefinesList) {
+    // Remove any existing plane with this name to avoid duplicates
     removeObjectByName(this.scene, name)
+
+    // Create a new image processing instance with the specified filters
     const imageProcessing = new ImageProcessing(
       this.videoController.getVideoTexture(),
       this.uniforms,
@@ -91,16 +105,22 @@ export class ImageProcessingMaterialController {
       this.anaglyphDefine,
       this.videoController.getVideoConfig(),
     )
+
+    // Get the rendered plane and configure its properties
     const plane = imageProcessing.createVideoPlane()
     plane.name = name
     plane.position.y = posY
     this.scene.add(plane)
+
     return imageProcessing
   }
 
   /**
    * Handles video change event
+   * Loads the new video and updates both the original and processed planes
+   * @async
    * @param {string} videoName - Name of the video to switch to
+   * @returns {Promise<void>}
    */
   async onVideoChange(videoName) {
     if (this.videoController.videoName === videoName) return

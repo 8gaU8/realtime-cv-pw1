@@ -73,7 +73,11 @@ export class VideoController {
     videoConfig[this.videoName].width = this.video.videoWidth
   }
 
-  // Create a Three.js VideoTexture from the video element
+  /**
+   * Creates a Three.js VideoTexture from the video element
+   * Configures texture parameters for optimal rendering
+   * @returns {THREE.VideoTexture} Configured video texture ready for use in materials
+   */
   getVideoTexture() {
     const videoTexture = new THREE.VideoTexture(this.video)
     videoTexture.minFilter = THREE.NearestFilter
@@ -83,12 +87,24 @@ export class VideoController {
     return videoTexture
   }
 
-  // Get the configuration of the currently loaded video
+  /**
+   * Returns the configuration object for the currently loaded video
+   * @returns {Object} videoConfig - Video configuration containing dimensions and position settings
+   * @returns {number} videoConfig.width - Width of the video
+   * @returns {number} videoConfig.height - Height of the video
+   * @returns {number} videoConfig.widthFactor - Width scaling factor for display
+   * @returns {number} videoConfig.heightFactor - Height scaling factor for display
+   *
+   */
   getVideoConfig() {
     return videoConfig[this.videoName]
   }
 
-  // Toggle play/pause state of the video
+  /**
+   * Toggles the play/pause state of the video
+   * If video is paused, it will play, and vice versa
+   * @returns {void}
+   */
   togglePlayPause() {
     if (!this.video) return
 
@@ -101,7 +117,11 @@ export class VideoController {
     }
   }
 
-  // Adjust the current playback time of the video
+  /**
+   * Adjusts the current playback time of the video
+   * @param {number} timeDelta - Number of seconds to add (positive) or subtract (negative)
+   * @returns {void}
+   */
   adjustVideoTime(timeDelta) {
     if (!this.video) return
 
@@ -112,7 +132,10 @@ export class VideoController {
     this.video.currentTime = updatedTime
   }
 
-  // Check if the video is ready for playback
+  /**
+   * Check if the video is ready for playback
+   * @returns {boolean} True if the video is ready, false otherwise
+   */
   ready() {
     return this.video !== null
   }

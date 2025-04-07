@@ -57,10 +57,6 @@ export class VideoController {
     }
     this.videoName = videoName
 
-    if (this.video) {
-      this.video.pause()
-    }
-
     this.video = document.createElement('video')
     this.video.src = videoConfig[this.videoName].path
     this.video.preload = 'auto'

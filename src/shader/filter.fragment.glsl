@@ -12,7 +12,15 @@ out vec4 out_FragColor;
 #define PI 3.1415926
 #define MEDIAN_KERNEL_SIZE 49
     
-vec4 averageFilter(int centerX, int centerY) {
+ivec2 clampCoord(ivec2 coord, int sizeX, int sizeY){
+    if (coord.x < sizeX/2){
+        return ivec2(clamp(coord.x, 0, sizeX/2 - 1), clamp(coord.y, 0, sizeY - 1));
+    }
+    return ivec2(clamp(coord.x, sizeX/2, sizeX - 1), clamp(coord.y, 0, sizeY - 1));
+
+}
+
+vec4 averageFilter(int centerX, int centerY, int sizeX, int sizeY){
     vec4 textureValue = vec4(0.0);
     for (int i = -kernelSizeDiv2; i <= kernelSizeDiv2; i++) {
         for (int j = -kernelSizeDiv2; j <= kernelSizeDiv2; j++){
@@ -22,7 +30,7 @@ vec4 averageFilter(int centerX, int centerY) {
     return textureValue / float(4 * kernelSizeDiv2 * (kernelSizeDiv2 + 4) + 1);
 }
 
-vec4 gaussianFilter(int centerX, int centerY) {
+vec4 gaussianFilter(int centerX, int centerY, int sizeX, int sizeY){
     // https://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
     vec4 textureValue = vec4(0.0);
     float twoSigmaSquare = 2.0 * sigma * sigma;
@@ -30,13 +38,14 @@ vec4 gaussianFilter(int centerX, int centerY) {
     for (int x = -kernelSizeDiv2; x <= kernelSizeDiv2; x++) {
         for (int y = -kernelSizeDiv2; y <= kernelSizeDiv2; y++){
             float weight = exp(-(float(x*x + y*y) / twoSigmaSquare)) / twoPiSigmaSquare;
-            textureValue += texelFetch( image, ivec2(centerX + x, centerY + y), 0 ) * weight;
+            ivec2 clamped = clampCoord(ivec2(centerX + x, centerY + y), sizeX, sizeY);
+            textureValue += texelFetch( image, clamped, 0 ) * weight;
         }
     }
     return textureValue;
 }
 
-vec4 laplacianFilter(int centerX, int centerY){
+vec4 laplacianFilter(int centerX, int centerY, int sizeX, int sizeY){
     // https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
 
     // Kernel of Laplacian filter
@@ -44,44 +53,49 @@ vec4 laplacianFilter(int centerX, int centerY){
     //  [-1  4 -1]
     //  [0  -1  0]]
     vec4 textureValue = vec4(0.0);
-    textureValue += texelFetch( image, ivec2(centerX, centerY), 0 ) * 4.0;
-    textureValue -= texelFetch( image, ivec2(centerX + 1, centerY + 0), 0 );
-    textureValue -= texelFetch( image, ivec2(centerX - 1, centerY + 0), 0 );
-    textureValue -= texelFetch( image, ivec2(centerX + 0, centerY + 1), 0 );
-    textureValue -= texelFetch( image, ivec2(centerX + 0, centerY - 1), 0 );
+    textureValue += texelFetch( image, clampCoord(ivec2(centerX + 0, centerY + 0), sizeX, sizeY), 0 ) * 4.0;
+    textureValue -= texelFetch( image, clampCoord(ivec2(centerX + 1, centerY + 0), sizeX, sizeY), 0 );
+    textureValue -= texelFetch( image, clampCoord(ivec2(centerX - 1, centerY + 0), sizeX, sizeY), 0 );
+    textureValue -= texelFetch( image, clampCoord(ivec2(centerX + 0, centerY + 1), sizeX, sizeY), 0 );
+    textureValue -= texelFetch( image, clampCoord(ivec2(centerX + 0, centerY - 1), sizeX, sizeY), 0 );
     return textureValue;
 
 }
 
-vec4 separableGaussianFilterVertical(int centerX, int centerY){
+vec4 separableGaussianFilterVertical(int centerX, int centerY, int sizeX, int sizeY){
+    
     // https://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf 3.6 Separability
     vec4 textureValue = vec4(0.0);
     float sigmaSquare = sigma * sigma;
     float twoSigmaSquare = 2.0 * sigmaSquare;
     float sqrt2PiSigma = sqrt(2.0 * PI * sigmaSquare);
 
+    // for (int kernelIdx = lowerConvBound; kernelIdx <= upperConvBound; kernelIdx++) {
     for (int kernelIdx = -kernelSizeDiv2; kernelIdx <= kernelSizeDiv2; kernelIdx++) {
         float weight = exp(-(float(kernelIdx*kernelIdx) / twoSigmaSquare)) / sqrt2PiSigma;
-        textureValue += texelFetch( image, ivec2(centerX, centerY + kernelIdx), 0 ) * weight;
+        ivec2 clamped = clampCoord(ivec2(centerX, centerY + kernelIdx), sizeX, sizeY);
+        textureValue += texelFetch( image, clamped, 0 ) * weight;
     }
     return textureValue;
 }
 
-vec4 separableGaussianFilterHorizontal(int centerX, int centerY){
+vec4 separableGaussianFilterHorizontal(int centerX, int centerY, int sizeX, int sizeY){
     // https://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf 3.6 Separability
     vec4 textureValue = vec4(0.0);
     float sigmaSquare = sigma * sigma;
     float twoSigmaSquare = 2.0 * sigmaSquare;
     float sqrt2PiSigma = sqrt(2.0 * PI * sigmaSquare);
 
+    // for (int kernelIdx = leftConvBound; kernelIdx <= rightConvBound; kernelIdx++) {
     for (int kernelIdx = -kernelSizeDiv2; kernelIdx <= kernelSizeDiv2; kernelIdx++) {
         float weight = exp(-(float(kernelIdx*kernelIdx) / twoSigmaSquare)) / sqrt2PiSigma;
-        textureValue += texelFetch( image, ivec2(centerX + kernelIdx, centerY), 0 ) * weight;
+        ivec2 clamped = clampCoord(ivec2(centerX + kernelIdx, centerY ), sizeX, sizeY);
+        textureValue += texelFetch( image, clamped, 0 ) * weight;
     }
     return textureValue;
 }
 
-vec4 medianFilter(int centerX, int centerY) {
+vec4 medianFilter(int centerX, int centerY, int sizeX, int sizeY){
     int kernelSizeDiv2 = min(kernelSizeDiv2, 3);
 
     float values[MEDIAN_KERNEL_SIZE];
@@ -89,7 +103,8 @@ vec4 medianFilter(int centerX, int centerY) {
     int index = 0;
     for (int i = -kernelSizeDiv2; i <= kernelSizeDiv2; i++) {
         for (int j = -kernelSizeDiv2; j <= kernelSizeDiv2; j++) {
-            vec3 color = texelFetch(image, ivec2(centerX + i, centerY + j), 0).rgb;
+            ivec2 clamped = clampCoord(ivec2(centerX + i, centerY + j), sizeX, sizeY);
+            vec3 color = texelFetch(image, clamped, 0).rgb;
             colors[index] = color;
             values[index] = length(color);
             index++;
@@ -114,10 +129,22 @@ vec4 medianFilter(int centerX, int centerY) {
 
 void main(void) {
     ivec2 texSize2d = textureSize(image, 0);
+    vec4 textureValue = vec4(0.0);
 
     // FILTER is macro defined at /src/shader.js
-    vec4 textureValue = FILTER(int(gl_FragCoord.x), int(gl_FragCoord.y));
+    int x = int(gl_FragCoord.x);
+    int y = int(gl_FragCoord.y);
+
+
+    x = x % (texSize2d.x/2);
+
+    textureValue = FILTER(int(gl_FragCoord.x), int(gl_FragCoord.y), texSize2d.x, texSize2d.y);
 
     out_FragColor = textureValue;
+
+    // if( leftConvBound == rightConvBound){
+    //     out_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    // }
+
 
 }

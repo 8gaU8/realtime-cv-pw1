@@ -18,15 +18,21 @@ const anaglyphMacrosName = Object.keys(anaglyphMacros)
 
 const filterMacros = {
   'No Filter': null,
-  gaussianFilter: { 'FILTER(X, Y)': 'gaussianFilter(X, Y)' },
-  laplacianFilter: { 'FILTER(X, Y)': 'laplacianFilter(X, Y)' },
+  gaussianFilter: {
+    'FILTER(X, Y, sizeX, sizeY)': 'gaussianFilter(X, Y, sizeX, sizeY)',
+  },
+  laplacianFilter: {
+    'FILTER(X, Y, sizeX, sizeY)': 'laplacianFilter(X, Y, sizeX, sizeY)',
+  },
   separableGaussianFilterHorizontal: {
-    'FILTER(X, Y)': 'separableGaussianFilterHorizontal(X, Y)',
+    'FILTER(X, Y, sizeX, sizeY)': 'separableGaussianFilterHorizontal(X, Y, sizeX, sizeY)',
   },
   separableGaussianFilterVertical: {
-    'FILTER(X, Y)': 'separableGaussianFilterVertical(X, Y)',
+    'FILTER(X, Y, sizeX, sizeY)': 'separableGaussianFilterVertical(X, Y, sizeX, sizeY)',
   },
-  medianFilter: { 'FILTER(X, Y)': 'medianFilter(X, Y)' },
+  medianFilter: {
+    'FILTER(X, Y, sizeX, sizeY)': 'medianFilter(X, Y, sizeX, sizeY)',
+  },
 }
 
 const filterMacrosName = [

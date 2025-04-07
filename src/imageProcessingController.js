@@ -63,9 +63,8 @@ export class ImageProcessingMaterialController {
     const name = 'videoPlaneProcessed'
     const posY = -this.videoController.getVideoConfig().posY
     // Apply selected filters
-    const filterDefinesList = this.filterDefinesList
 
-    const imageProcessing = this._createPlane(name, posY, filterDefinesList)
+    const imageProcessing = this._createPlane(name, posY, this.filterDefinesList)
     // Store the created image processing instance for later rendering
     this.imageObjectProcessed = imageProcessing
   }

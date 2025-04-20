@@ -6,6 +6,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
 import Stats from 'three/examples/jsm/libs/stats.module'
+
 import { ImageProcessingMaterialController } from './imageProcessingController.js'
 import { initCamera, initRenderer } from './init.js'
 import { initGUI } from './initGUI.js'
@@ -32,8 +33,7 @@ async function main() {
   const videoController = new VideoController()
 
   // Initialize material controller for image processing
-  const nbFilter = 2
-  const materialController = new ImageProcessingMaterialController(scene, videoController, nbFilter)
+  const materialController = new ImageProcessingMaterialController(scene, videoController)
 
   // Setup GUI controls
   const rootGui = new GUI()

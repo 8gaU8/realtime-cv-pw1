@@ -5,7 +5,6 @@
  */
 import * as THREE from 'three'
 import { ImageProcessing } from './imageProcessing.js'
-import { anaglyphMacros, filterMacros } from './shader.js'
 import { removeObjectByName } from './utils.js'
 import { VideoController } from './videoElement.js'
 
@@ -15,25 +14,11 @@ export class ImageProcessingMaterialController {
    * @param {THREE.Scene} scene
    * @param {VideoController} videoController
    */
-  constructor(scene, videoController, nbFilter) {
+  constructor(scene, videoController) {
     this.scene = scene
 
     /** @type {VideoController} */
     this.videoController = videoController
-    this.nbFilter = nbFilter
-
-    // Initialize with the first anaglyph method
-    const selectedAnaglyph = Object.keys(anaglyphMacros)[0]
-    this.anaglyphDefine = anaglyphMacros[selectedAnaglyph]
-
-    // Initialize with the first filter method
-    const defaultFilterName = Object.keys(filterMacros)[0]
-
-    // Array for holding filter defines (up to two filters can be applied)
-    this.filterDefinesList = new Array(this.nbFilter)
-    for (let i = 0; i < this.nbFilter; i++) {
-      this.filterDefinesList[i] = filterMacros[defaultFilterName]
-    }
 
     // Initialize image planes
     this.imageObjectProcessed = null
@@ -44,8 +29,6 @@ export class ImageProcessingMaterialController {
       scale: { type: 'f', value: 1.0 },
       translateX: { type: 'f', value: 0.0 },
       translateY: { type: 'f', value: 0.0 },
-      kernelSizeDiv2: { type: 'i', value: 3 },
-      sigma: { type: 'f', value: 0.85 },
     }
 
     // Initialize with default video
@@ -62,9 +45,8 @@ export class ImageProcessingMaterialController {
   updateProcessedPlane() {
     const name = 'videoPlaneProcessed'
     const posY = -this.videoController.getVideoConfig().posY
-    // Apply selected filters
 
-    const imageProcessing = this._createPlane(name, posY, this.filterDefinesList)
+    const imageProcessing = this._createPlane(name, posY)
     // Store the created image processing instance for later rendering
     this.imageObjectProcessed = imageProcessing
   }
@@ -77,10 +59,8 @@ export class ImageProcessingMaterialController {
   updateOriginalPlane() {
     const name = 'videoPlaneOriginal'
     const posY = this.videoController.getVideoConfig().posY
-    // Don't apply any filter to the original video
-    const filterDefinesList = []
 
-    const imageProcessing = this._createPlane(name, posY, filterDefinesList)
+    const imageProcessing = this._createPlane(name, posY)
     this.imageObjectOriginal = imageProcessing
   }
 
@@ -89,10 +69,9 @@ export class ImageProcessingMaterialController {
    * @private
    * @param {string} name - Unique name for the mesh in the scene
    * @param {number} posY - Y position of the plane in the scene
-   * @param {Array<Object|null>} filterDefinesList - List of shader defines for filters to apply
    * @returns {ImageProcessing} The created image processing instance
    */
-  _createPlane(name, posY, filterDefinesList) {
+  _createPlane(name, posY) {
     // Remove any existing plane with this name to avoid duplicates
     removeObjectByName(this.scene, name)
 
@@ -100,8 +79,6 @@ export class ImageProcessingMaterialController {
     const imageProcessing = new ImageProcessing(
       this.videoController.getVideoTexture(),
       this.uniforms,
-      filterDefinesList,
-      this.anaglyphDefine,
       this.videoController.getVideoConfig(),
     )
 
@@ -127,48 +104,7 @@ export class ImageProcessingMaterialController {
     console.log('videoName', videoName)
     await this.videoController.setVideo(videoName)
 
-    this.sourceTexture = this.videoController.getVideoTexture()
     this.updateOriginalPlane()
-    this.updateProcessedPlane()
-  }
-
-  /**
-   * Handles anaglyph method change event
-   * @param {string} value - Name of the anaglyph method to use
-   */
-  onAnaglyphChange(value) {
-    const anaglyphDefine = anaglyphMacros[value]
-    if (this.anaglyphDefine === anaglyphDefine) return
-
-    this.anaglyphDefine = anaglyphDefine
-    this.updateOriginalPlane()
-    this.updateProcessedPlane()
-  }
-
-  /**
-   * Handles filter change event
-   * @param {string} selectedFilter - Name of the filter to apply
-   * @param {number} filterIdx - Index of the filter slot (0 or 1)
-   */
-  onFilterChange(selectedFilter, filterIdx) {
-    const filterDefine = filterMacros[selectedFilter]
-    // Don't update if the same filter is selected
-    if (this.filterDefinesList[filterIdx] === filterDefine) return
-
-    // special case for separable filter
-    if (selectedFilter === 'separableGaussianFilter') {
-      this.setSeparatableFilter(filterIdx)
-      return
-    }
-    this.filterDefinesList[filterIdx] = filterDefine
-    this.updateProcessedPlane()
-  }
-
-  setSeparatableFilter(filterIdx) {
-    if (filterIdx + 1 >= this.filterDefinesList.length)
-      throw new Error('Invalid position of separable filter')
-    this.filterDefinesList[filterIdx] = filterMacros.separableGaussianFilterHorizontal
-    this.filterDefinesList[filterIdx + 1] = filterMacros.separableGaussianFilterVertical
     this.updateProcessedPlane()
   }
 

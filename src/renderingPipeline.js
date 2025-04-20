@@ -13,10 +13,9 @@ export class RenderingPipelinePass {
    * @param {number} targetWidth - Width of the render target
    * @param {number} targetHeight - Height of the render target
    * @param {Object} uniforms - Shader uniforms
-   * @param {Object} defines - Shader preprocessor defines
-   * @param {string} fragmentShader - GLSL fragment shader code
+   * @param {string} fragmentShader - GLSL fragment shader code, filters or anaglyph
    */
-  constructor(sourceTexture, targetWidth, targetHeight, uniforms, defines, fragmentShader) {
+  constructor(sourceTexture, targetWidth, targetHeight, uniforms, fragmentShader) {
     // Initialize scene and camera for this render pass
     this.scene = new THREE.Scene()
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1 / Math.pow(2, 53), 1)
@@ -34,7 +33,6 @@ export class RenderingPipelinePass {
     this.uniforms = { ...uniforms }
     this.uniforms['image'] = { type: 't', value: sourceTexture }
 
-    this.defines = defines
     this.fragmentShader = fragmentShader
 
     // Create the rendering components
@@ -60,7 +58,6 @@ export class RenderingPipelinePass {
       vertexShader: defaultVertexShader,
       fragmentShader: this.fragmentShader,
       glslVersion: THREE.GLSL3,
-      defines: this.defines,
     })
 
     // Create a full-screen plane to render the shader effect

@@ -14,9 +14,9 @@ out vec4 out_FragColor;
     
 ivec2 clampCoord(ivec2 coord, int sizeX, int sizeY){
     if (coord.x < sizeX/2){
-        return ivec2(clamp(coord.x, 0, sizeX/2 - 1), clamp(coord.y, 0, sizeY - 1));
+        return ivec2(clamp(coord.x, 0, sizeX/2 - 2), clamp(coord.y, 0, sizeY - 1));
     }
-    return ivec2(clamp(coord.x, sizeX/2, sizeX - 1), clamp(coord.y, 0, sizeY - 1));
+    return ivec2(clamp(coord.x, sizeX/2+1, sizeX - 1), clamp(coord.y, 0, sizeY - 1));
 
 }
 
@@ -70,7 +70,6 @@ vec4 separableGaussianFilterVertical(int centerX, int centerY, int sizeX, int si
     float twoSigmaSquare = 2.0 * sigmaSquare;
     float sqrt2PiSigma = sqrt(2.0 * PI * sigmaSquare);
 
-    // for (int kernelIdx = lowerConvBound; kernelIdx <= upperConvBound; kernelIdx++) {
     for (int kernelIdx = -kernelSizeDiv2; kernelIdx <= kernelSizeDiv2; kernelIdx++) {
         float weight = exp(-(float(kernelIdx*kernelIdx) / twoSigmaSquare)) / sqrt2PiSigma;
         ivec2 clamped = clampCoord(ivec2(centerX, centerY + kernelIdx), sizeX, sizeY);
@@ -86,7 +85,6 @@ vec4 separableGaussianFilterHorizontal(int centerX, int centerY, int sizeX, int 
     float twoSigmaSquare = 2.0 * sigmaSquare;
     float sqrt2PiSigma = sqrt(2.0 * PI * sigmaSquare);
 
-    // for (int kernelIdx = leftConvBound; kernelIdx <= rightConvBound; kernelIdx++) {
     for (int kernelIdx = -kernelSizeDiv2; kernelIdx <= kernelSizeDiv2; kernelIdx++) {
         float weight = exp(-(float(kernelIdx*kernelIdx) / twoSigmaSquare)) / sqrt2PiSigma;
         ivec2 clamped = clampCoord(ivec2(centerX + kernelIdx, centerY ), sizeX, sizeY);
@@ -96,24 +94,30 @@ vec4 separableGaussianFilterHorizontal(int centerX, int centerY, int sizeX, int 
 }
 
 vec4 medianFilter(int centerX, int centerY, int sizeX, int sizeY){
-    int kernelSizeDiv2 = min(kernelSizeDiv2, 3);
 
-    float values[MEDIAN_KERNEL_SIZE];
+    int kernelSizeDiv2 = min(kernelSizeDiv2, 3);
+    ivec2 clamped;
+    vec3 color;
     vec3 colors[MEDIAN_KERNEL_SIZE];
+    float values[MEDIAN_KERNEL_SIZE];
     int index = 0;
+
     for (int i = -kernelSizeDiv2; i <= kernelSizeDiv2; i++) {
         for (int j = -kernelSizeDiv2; j <= kernelSizeDiv2; j++) {
-            ivec2 clamped = clampCoord(ivec2(centerX + i, centerY + j), sizeX, sizeY);
-            vec3 color = texelFetch(image, clamped, 0).rgb;
+            clamped = clampCoord(ivec2(centerX + i, centerY + j), sizeX, sizeY);
+            color = texelFetch(image, clamped, 0).rgb;
             colors[index] = color;
             values[index] = length(color);
             index++;
         }
     }
+
     // insertion sort
+    vec3 col;
+    float key;
     for (int i = 1; i < MEDIAN_KERNEL_SIZE; ++i) {
-        float key = values[i];
-        vec3 col = colors[i];
+        key = values[i];
+        col = colors[i];
         int j = i - 1;
         while (j >= 0 && values[j] > key) {
             values[j + 1] = values[j];
@@ -129,22 +133,15 @@ vec4 medianFilter(int centerX, int centerY, int sizeX, int sizeY){
 
 void main(void) {
     ivec2 texSize2d = textureSize(image, 0);
-    vec4 textureValue = vec4(0.0);
 
-    // FILTER is macro defined at /src/shader.js
     int x = int(gl_FragCoord.x);
     int y = int(gl_FragCoord.y);
 
-
     x = x % (texSize2d.x/2);
 
-    textureValue = FILTER(int(gl_FragCoord.x), int(gl_FragCoord.y), texSize2d.x, texSize2d.y);
+    // FILTER is macro defined at /src/shader.js
+    vec4 textureValue = FILTER(int(gl_FragCoord.x), int(gl_FragCoord.y), texSize2d.x, texSize2d.y);
 
     out_FragColor = textureValue;
-
-    // if( leftConvBound == rightConvBound){
-    //     out_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-    // }
-
-
+    out_FragColor.a = 1.0;
 }

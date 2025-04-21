@@ -1,5 +1,4 @@
 import anaglyphFragmentShader from './shader/anaglyph.fragment.glsl?raw'
-import filterFragmentShader from './shader/filter.fragment.glsl?raw'
 import defaultVertexShader from './shader/vertex.glsl?raw'
 
 const anaglyphMacros = {
@@ -16,39 +15,10 @@ const anaglyphMacros = {
 
 const anaglyphMacrosName = Object.keys(anaglyphMacros)
 
-const filterMacros = {
-  'No Filter': null,
-  gaussianFilter: {
-    'FILTER(X, Y, sizeX, sizeY)': 'gaussianFilter(X, Y, sizeX, sizeY)',
-  },
-  laplacianFilter: {
-    'FILTER(X, Y, sizeX, sizeY)': 'laplacianFilter(X, Y, sizeX, sizeY)',
-  },
-  separableGaussianFilterHorizontal: {
-    'FILTER(X, Y, sizeX, sizeY)': 'separableGaussianFilterHorizontal(X, Y, sizeX, sizeY)',
-  },
-  separableGaussianFilterVertical: {
-    'FILTER(X, Y, sizeX, sizeY)': 'separableGaussianFilterVertical(X, Y, sizeX, sizeY)',
-  },
-  medianFilter: {
-    'FILTER(X, Y, sizeX, sizeY)': 'medianFilter(X, Y, sizeX, sizeY)',
-  },
-}
-
-const filterMacrosName = [
-  'No Filter',
-  'gaussianFilter',
-  'laplacianFilter',
-  'separableGaussianFilter',
-  'medianFilter',
-]
 
 export {
   anaglyphFragmentShader,
   anaglyphMacros,
   anaglyphMacrosName,
   defaultVertexShader,
-  filterFragmentShader,
-  filterMacros,
-  filterMacrosName,
 }

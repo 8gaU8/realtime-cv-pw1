@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { RenderingPipelinePass } from './renderingPipeline.js'
-import { anaglyphFragmentShader, filterFragmentShader } from './shader.js'
+import { anaglyphFragmentShader} from './shader.js'
 
 /**
  * ImageProcessing class handles the processing pipeline for creating anaglyph effects.
@@ -12,7 +12,6 @@ export class ImageProcessing {
    *
    * @param {THREE.Texture} sourceTexture - The source video texture to process
    * @param {Object} uniforms - Shader uniforms for image processing
-   * @param {Array<Object|null>} filterDefinesList - List of shader macro definitions for filters
    * @param {Object} anaglyphDefine - Shader macro definition for anaglyph effect
    * @param {Object} videoConfig - Configuration parameters for the video
    * @param {number} videoConfig.width - Width of the video
@@ -20,7 +19,7 @@ export class ImageProcessing {
    * @param {number} videoConfig.widthFactor - Width scaling factor for display
    * @param {number} videoConfig.heightFactor - Height scaling factor for display
    */
-  constructor(sourceTexture, uniforms, filterDefinesList, anaglyphDefine, videoConfig) {
+  constructor(sourceTexture, uniforms, anaglyphDefine, videoConfig) {
     this.sourceTexture = sourceTexture
     this.uniforms = uniforms
     this.videoConfig = videoConfig
@@ -32,32 +31,11 @@ export class ImageProcessing {
     this.targetWidth = sourceVideoWidth / 2
     this.targetHeight = sourceVideoHeight
 
-    this.filterPipeline = []
 
-    // Build the filter pipeline by sequentially applying each filter
-    let texture = sourceTexture
-    filterDefinesList.forEach((define) => {
-      console.log('filterDefine:', define)
-      if (define === null) {
-        console.log('define is null')
-        return
-      }
-      const pipelinePass = new RenderingPipelinePass(
-        texture,
-        sourceVideoWidth,
-        sourceVideoHeight,
-        this.uniforms,
-        define,
-        filterFragmentShader,
-      )
-      this.filterPipeline.push(pipelinePass)
-      texture = pipelinePass.getTexture()
-    })
-    console.log('Length of filterPipeline:', this.filterPipeline.length)
 
     // Create the final anaglyph processing pass
     const anaglyphPath = new RenderingPipelinePass(
-      texture,
+      sourceTexture,
       this.targetWidth,
       this.targetHeight,
       this.uniforms,
@@ -99,10 +77,6 @@ export class ImageProcessing {
    * @param {THREE.WebGLRenderer} renderer - The WebGL renderer used to render the pipeline
    */
   render(renderer) {
-    // First render all filters in the pipeline
-    this.filterPipeline.forEach((pipeline) => {
-      pipeline.render(renderer)
-    })
     // Then render the anaglyph effect
     this.anaglyphPath.render(renderer)
   }

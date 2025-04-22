@@ -78,17 +78,14 @@ export function initGUI(gui, materialCtrl, videoCtrl) {
 
   // First filter selection folder
   const filtersFolder = gui.addFolder('Filters')
-  const nbFilter = materialCtrl.nbFilter
-  for (let i = 0; i < nbFilter; i++) {
-    filtersFolder
-      .add({ value: filterMacrosName[0] }, 'value', filterMacrosName)
-      .name(`Filter ${i + 1}`)
-      .onChange((name) => {
-        if (name === 'separableGaussianFilter') {
-          materialCtrl.setSeparatableFilter(i)
-        } else {
-          materialCtrl.onFilterChange(name, i)
-        }
-      })
-  }
+  filtersFolder
+    .add({ value: filterMacrosName[0] }, 'value', filterMacrosName)
+    .name('Filter')
+    .onChange((name) => {
+      if (name === 'separableGaussianFilter') {
+        materialCtrl.setSeparatableFilter(0)
+      } else {
+        materialCtrl.onFilterChange(name, 0)
+      }
+    })
 }

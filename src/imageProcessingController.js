@@ -155,11 +155,6 @@ export class ImageProcessingMaterialController {
     // Don't update if the same filter is selected
     if (this.filterDefinesList[filterIdx] === filterDefine) return
 
-    // special case for separable filter
-    if (selectedFilter === 'separableGaussianFilter') {
-      this.setSeparatableFilter(filterIdx)
-      return
-    }
     this.filterDefinesList[filterIdx] = filterDefine
     this.updateProcessedPlane()
   }

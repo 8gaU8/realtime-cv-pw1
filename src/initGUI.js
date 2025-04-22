@@ -84,7 +84,11 @@ export function initGUI(gui, materialCtrl, videoCtrl) {
       .add({ value: filterMacrosName[0] }, 'value', filterMacrosName)
       .name(`Filter ${i + 1}`)
       .onChange((name) => {
-        materialCtrl.onFilterChange(name, i)
+        if (name === 'separableGaussianFilter') {
+          materialCtrl.setSeparatableFilter(i)
+        } else {
+          materialCtrl.onFilterChange(name, i)
+        }
       })
   }
 }

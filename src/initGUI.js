@@ -66,6 +66,7 @@ export function initGUI(gui, materialCtrl, videoCtrl) {
     .add(materialCtrl.uniforms.kernelSizeDiv2, 'value', 1, 20, 1)
     .name('Kernel Size / 2')
   filterParamFolder.add(materialCtrl.uniforms.sigma, 'value', 0.1, 10).name('Sigma')
+  filterParamFolder.add(materialCtrl.uniforms.laplacianFactor, 'value', 0.1, 30).name('Laplacian Factor')
 
   // Anaglyph method selection folder
   const anaglyphGUI = gui.addFolder('Anaglyph')
@@ -84,6 +85,9 @@ export function initGUI(gui, materialCtrl, videoCtrl) {
     .onChange((name) => {
       if (name === 'separableGaussianFilter') {
         materialCtrl.setSeparatableFilter(0)
+      } else if (name === 'Gaussian Filter + Laplacian Filter') {
+        materialCtrl.onFilterChange('gaussianFilter', 0)
+        materialCtrl.onFilterChange('laplacianFilter', 1)
       } else {
         materialCtrl.onFilterChange(name, 0)
       }

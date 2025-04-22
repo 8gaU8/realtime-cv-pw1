@@ -6,6 +6,7 @@ uniform float translateX;
 uniform float translateY;
 uniform int kernelSizeDiv2;
 uniform float sigma;
+uniform float laplacianFactor;
 
 out vec4 out_FragColor;
 
@@ -58,7 +59,7 @@ vec4 laplacianFilter(int centerX, int centerY, int sizeX, int sizeY){
     textureValue -= texelFetch( image, clampCoord(ivec2(centerX - 1, centerY + 0), sizeX, sizeY), 0 );
     textureValue -= texelFetch( image, clampCoord(ivec2(centerX + 0, centerY + 1), sizeX, sizeY), 0 );
     textureValue -= texelFetch( image, clampCoord(ivec2(centerX + 0, centerY - 1), sizeX, sizeY), 0 );
-    return textureValue;
+    return textureValue * laplacianFactor;
 
 }
 

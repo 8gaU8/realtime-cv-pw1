@@ -46,6 +46,7 @@ export class ImageProcessingMaterialController {
       translateY: { type: 'f', value: 0.0 },
       kernelSizeDiv2: { type: 'i', value: 3 },
       sigma: { type: 'f', value: 0.85 },
+      laplacianFactor: { type: 'f', value: 0.5 },
     }
 
     // Initialize with default video

@@ -41,6 +41,7 @@ const filterMacrosName = [
   'laplacianFilter',
   'separableGaussianFilter',
   'medianFilter',
+  'Gaussian Filter + Laplacian Filter',
 ]
 
 export {
